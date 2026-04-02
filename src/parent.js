@@ -95,8 +95,8 @@ document.addEventListener('DOMContentLoaded', () => {
       const noteTxt = (ev.notes && ev.notes.trim() !== '') ? `<span style="display:block; font-size:0.9rem; color:#666; margin-top:5px; border-right: 3px solid #ccc; padding-right: 8px;">📝 ملاحظة: ${ev.notes}</span>` : '';
       
       let badgeColor = '#d1d5db';
-      if(ev.performance.includes('ممتاز')) badgeColor = '#fcd34d'; // goldish
-      else if(ev.performance.includes('جيد جداً')) badgeColor = '#bfdbfe'; // light blue
+      if(ev.performance && ev.performance.includes('ممتاز')) badgeColor = '#fcd34d'; // goldish
+      else if(ev.performance && ev.performance.includes('جيد جداً')) badgeColor = '#bfdbfe'; // light blue
 
       const li = document.createElement('li');
       li.style.cssText = "padding: 15px; border: 1px solid #eee; border-radius: 8px; margin-bottom: 10px; background: #fff;";
