@@ -1,8 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 
-// TODO: Replace with the user's actual Supabase URL and Anon Key
-const supabaseUrl = 'YOUR_SUPABASE_URL';
-const supabaseKey = 'YOUR_SUPABASE_ANON_KEY';
+const supabaseUrl = 'https://oypfhzkbibrpobrvzwtn.supabase.co';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im95cGZoemtiaWJycG9icnZ6d3RuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUxMDY3ODAsImV4cCI6MjA5MDY4Mjc4MH0.pgHCJdvOxOD-btGMmpSIiRblk8o82VxQ2Z36rd7HyGg';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 const REGISTRATION_LIMIT = 25;
