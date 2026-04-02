@@ -107,6 +107,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       const { data: settingsData, error: settingsErr } = await supabase.from('settings').select('*').single();
       const currentBatch = settingsData ? settingsData.current_batch : 1;
       const forceOpen = settingsData ? settingsData.is_registration_open : true;
+      const maxCapacity = settingsData && settingsData.max_capacity ? settingsData.max_capacity : 25;
       
       form.dataset.batch = currentBatch;
 
@@ -121,6 +122,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         .eq('batch_number', currentBatch);
 
       if (error) throw error;
+
+      if (count >= maxCapacity) {
+        showLimitReached();
+        return true;
+      }
 
       return handleStatusUpdate(count || 0, initialLoad);
     } catch (error) {

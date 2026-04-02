@@ -71,6 +71,33 @@
               <h3 id="registration-status" style="color: green; font-size: 1.5rem;">...</h3>
               <p>حالة بوابة التسجيل</p>
             </div>
+             <div class="dashboard-stat" style="flex:1; margin-bottom:0; padding:1rem; min-width: 250px; text-align: right;">
+               <label style="font-weight:bold; color:var(--color-primary-dark); display:block; margin-bottom:5px;">سعة الدفعة الاستيعابية:</label>
+               <div style="display:flex; gap:5px;">
+                 <input type="number" id="capacity-input" style="width: 80px; padding: 5px; font-size: 1rem; text-align: center; border: 1px solid #ccc; border-radius: 5px;" value="25">
+                 <button id="update-capacity-btn" class="submit-btn" style="width: auto; padding: 5px 15px; margin: 0; box-shadow: none;">تحديث</button>
+               </div>
+             </div>
+          </div>
+
+          <!-- Analytics & Podium Section -->
+          <div id="analytics-section" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; margin-bottom: 20px;">
+            <div style="display:flex; justify-content: space-between; align-items:center; flex-wrap:wrap; gap: 15px;">
+              
+              <!-- Best Batch Banner -->
+              <div id="best-batch-banner" style="background: linear-gradient(135deg, gold, #f59e0b); color: #fff; padding: 15px 25px; border-radius: 8px; flex: 1; min-width: 280px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                 <h3 style="margin:0 0 5px 0; font-size: 1.2rem; text-shadow: 1px 1px 2px rgba(0,0,0,0.2);">🏆 الدفعة الأقوى تنافسياً (التاريخية)</h3>
+                 <p style="margin:0; font-size: 1.1rem; font-weight:bold; text-shadow: 1px 1px 2px rgba(0,0,0,0.2);" id="best-batch-name">جاري الحساب...</p>
+              </div>
+
+              <!-- Top 3 Podium (Hall of Fame) -->
+              <div style="flex: 2; min-width: 350px;">
+                <h3 style="margin:0 0 10px 0; color:var(--color-primary-dark); border-bottom: 2px solid var(--color-gold); padding-bottom: 5px;">👑 لوحة الشرف (الأوائل)</h3>
+                <div id="podium-container" style="display: flex; justify-content: space-around; align-items: flex-end; height: 120px; padding-top: 10px;">
+                  <!-- Injected via JS -->
+                </div>
+              </div>
+            </div>
           </div>
 
           <!-- Controls Section -->

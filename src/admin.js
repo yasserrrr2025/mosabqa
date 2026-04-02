@@ -18,6 +18,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const batchFilter = document.getElementById('batch-filter');
   const adminTableBody = document.getElementById('admin-table-body');
   
+  const capacityInput = document.getElementById('capacity-input');
+  const updateCapacityBtn = document.getElementById('update-capacity-btn');
+  const podiumContainer = document.getElementById('podium-container');
+  const bestBatchNameEl = document.getElementById('best-batch-name');
+  
   const printDateEl = document.getElementById('admin-print-date');
   if(printDateEl) printDateEl.textContent = new Date().toLocaleDateString('ar-SA');
 
@@ -47,6 +52,7 @@ document.addEventListener('DOMContentLoaded', () => {
         currentBatchDisplay.textContent = settingsData.current_batch;
         regStatusDisplay.textContent = settingsData.is_registration_open ? 'مفتوح 🟢' : 'مغلق (مكتمل) 🔴';
         regStatusDisplay.style.color = settingsData.is_registration_open ? '#16a34a' : '#dc2626';
+        if(capacityInput) capacityInput.value = settingsData.max_capacity || 25;
       }
 
       // 2. Fetch all students across all batches
@@ -89,6 +95,29 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  updateCapacityBtn.addEventListener('click', async () => {
+    const newCap = parseInt(capacityInput.value);
+    if(newCap <= 0) return alert('أدخل سعة صحيحة');
+    
+    updateCapacityBtn.disabled = true;
+    updateCapacityBtn.textContent = '...';
+    try {
+      const { error } = await supabase
+        .from('settings')
+        .update({ max_capacity: newCap })
+        .eq('id', currentSettingsId);
+      
+      if(error) throw error;
+      alert('تم تحديث السعة الاستيعابية بنجاح! سينعكس ذلك فوراً على رابط التسجيل.');
+    } catch(err) {
+      console.error(err);
+      alert('خطأ في الاتصال بقاعدة البيانات.');
+    } finally {
+      updateCapacityBtn.textContent = 'تحديث';
+      updateCapacityBtn.disabled = false;
+    }
+  });
+
   batchFilter.addEventListener('change', (e) => {
     renderTable(e.target.value);
   });
@@ -113,6 +142,55 @@ document.addEventListener('DOMContentLoaded', () => {
       const scoreB = allScores[b.id] || 0;
       return scoreB - scoreA;
     });
+
+    // ========== Analytics: Podium & Best Batch ==========
+    if(podiumContainer) {
+       podiumContainer.innerHTML = '';
+       const top3 = filtered.slice(0, 3);
+       const medals = ['🥇 المركز الأول', '🥈 المركز الثاني', '🥉 المركز الثالث'];
+       const colors = ['#f59e0b', '#9ca3af', '#b45309'];
+       
+       if(top3.length > 0) {
+         podiumContainer.innerHTML = top3.map((s, index) => `
+           <div style="text-align:center; padding: 10px; background: rgba(0,0,0,0.02); border-radius: 8px; border-bottom: 3px solid ${colors[index]}; width: 30%;">
+             <div style="font-size: 1.1rem; margin-bottom: 5px;">${medals[index]}</div>
+             <div style="font-weight:bold; font-size: 0.95rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${s.full_name}">${s.full_name.split(' ').slice(0,2).join(' ')}</div>
+             <div style="color:var(--color-primary-dark); font-weight:bold;">${allScores[s.id]||0} نقطة</div>
+           </div>
+         `).join('');
+       } else {
+         podiumContainer.innerHTML = '<div style="color:#666;">لا يوجد بيانات للعرض</div>';
+       }
+    }
+
+    if(bestBatchNameEl) {
+       const batchStats = {};
+       allStudents.forEach(s => {
+         if(!batchStats[s.batch_number]) batchStats[s.batch_number] = { totalScore: 0, count: 0 };
+         batchStats[s.batch_number].totalScore += (allScores[s.id] || 0);
+         batchStats[s.batch_number].count += 1;
+       });
+
+       let bestBatchNum = null;
+       let bestAverage = -1;
+       
+       for(const b in batchStats) {
+         if(batchStats[b].count > 0) {
+            const avg = batchStats[b].totalScore / batchStats[b].count;
+            if(avg > bestAverage) {
+              bestAverage = avg;
+              bestBatchNum = b;
+            }
+         }
+       }
+       
+       if(bestBatchNum && bestAverage > 0) {
+          bestBatchNameEl.textContent = `الدفعة رقم (${bestBatchNum}) بمتوسط ${bestAverage.toFixed(1)} نقطة/طالب`;
+       } else {
+          bestBatchNameEl.textContent = 'البيانات غير كافية للقياس';
+       }
+    }
+    // ===============================================
 
     let rank = 1;
     filtered.forEach(student => {
