@@ -76,8 +76,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
 
       // Success
-      showFeedback(`بشرى سارة! تم تسجيل الطالب "${data.full_name}" بنجاح.. شكراً لثقتكم.`, 'success');
-      form.reset();
+      document.getElementById('registration-form-container').style.display = 'none';
+      document.getElementById('success-student-name').textContent = `بشرى سارة! تم تسجيل الطالب "${data.full_name}" بنجاح.. شكراً لثقتكم.`;
+      document.getElementById('success-container').style.display = 'block';
       
       // Update count
       await checkRegistrationStatus(false);

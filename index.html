@@ -104,6 +104,15 @@
           <p>اعتذارنا لكم، لقد تم الوصول إلى الحد الأقصى المسموح به للتسجيل (25 طالب).</p>
           <p class="secondary-info" style="font-weight: bold; color: var(--color-primary); margin-top: 10px;">شكراً للحرص والاهتمام، ونسأل الله التوفيق للجميع.</p>
         </div>
+
+        <div id="success-container" class="limit-reached-message" style="display: none;">
+          <div class="icon-wrapper" style="box-shadow: 0 0 20px var(--color-success); background: rgba(22, 163, 74, 0.1); animation: pulseGreen 2.5s infinite;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+          </div>
+          <h2 style="color: var(--color-success);">تم التسجيل بنجاح!</h2>
+          <p id="success-student-name" style="font-size: 1.2rem; font-weight: bold; margin-bottom: 20px; color: var(--color-primary-dark);"></p>
+          <button onclick="location.reload()" class="submit-btn" style="background: var(--color-success); box-shadow: none;">تسجيل طالب جديد</button>
+        </div>
       </div>
       
       <div class="decorative-pattern top-left"></div>
