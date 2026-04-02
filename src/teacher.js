@@ -92,19 +92,23 @@ document.addEventListener('DOMContentLoaded', () => {
             <h3>${rank}. ${student.full_name}</h3>
             <span style="background: rgba(198,162,86,0.1); color: var(--color-gold-dark); padding: 4px 10px; border-radius: 10px; font-weight: bold; font-size: 0.85rem;">نقاط: ${score}</span>
           </div>
-          <p style="color: #666; font-size: 0.9rem; margin-top: -5px; margin-bottom: 15px;">${student.grade} - فصل ${student.class_number}</p>
+          <p style="color: #666; font-size: 0.9rem; margin-top: -5px; margin-bottom: 15px;">${student.grade} - فصل ${student.class_number}
+            <div style="margin-top: 5px;">
+              <span class="status-badge">النقاط التراكمية: <span id="dyn-score-${student.id}" style="font-weight:bold;">${scores[student.id] || 0}</span></span>
+            </div>
+          </p>
           
           <div class="eval-card-row">
             <label>حالة التحضير:</label>
             <div class="pill-group">
-              <input type="radio" name="att-${student.id}" id="att-present-${student.id}" class="pill-radio" value="حاضر" checked>
-              <label for="att-present-${student.id}" class="pill-label">حاضر</label>
+              <input type="radio" name="att-${student.id}" id="att-pres-${student.id}" class="pill-radio att-present" value="حاضر" checked>
+              <label for="att-pres-${student.id}" class="pill-label">حاضر</label>
               
-              <input type="radio" name="att-${student.id}" id="att-late-${student.id}" class="pill-radio" value="مستأذن">
-              <label for="att-late-${student.id}" class="pill-label">مستأذن</label>
+              <input type="radio" name="att-${student.id}" id="att-exc-${student.id}" class="pill-radio att-excused" value="مستأذن">
+              <label for="att-exc-${student.id}" class="pill-label">مستأذن</label>
               
-              <input type="radio" name="att-${student.id}" id="att-absent-${student.id}" class="pill-radio" value="غائب">
-              <label for="att-absent-${student.id}" class="pill-label">غائب</label>
+              <input type="radio" name="att-${student.id}" id="att-abs-${student.id}" class="pill-radio att-absent" value="غائب">
+              <label for="att-abs-${student.id}" class="pill-label">غائب</label>
             </div>
           </div>
           
@@ -143,8 +147,9 @@ document.addEventListener('DOMContentLoaded', () => {
           </div>
 
           <div class="eval-card-row" style="margin-top: 15px;">
-            <input type="text" class="notes-input" id="note-${student.id}" placeholder="اكتب ملاحظاتك على الإنجاز..." style="margin-bottom: 15px;">
-            <button class="save-btn" style="width: 100%; border-radius: 20px;" onclick="window.saveEval('${student.id}')" id="btn-${student.id}">تأكيد المهارات وحفظ</button>
+            <input type="text" class="notes-input" id="memo-${student.id}" placeholder="تحديد المحفوظ المنجز (مثال: سورة الكهف، الجزء 29).." style="margin-bottom: 10px; border-color: var(--color-gold);">
+            <input type="text" class="notes-input" id="note-${student.id}" placeholder="إضافة أي ملاحظات أو توجيهات للطالب..." style="margin-bottom: 15px;">
+            <button class="save-btn" style="width: 100%; border-radius: 20px;" onclick="window.saveEval('${student.id}')" id="btn-${student.id}">تأكيد الحفظ لليوم وحساب النقاط</button>
           </div>
         `;
         studentsGrid.appendChild(card);
@@ -160,8 +165,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // Global function for the inline onclick handler
   window.saveEval = async function(studentId) {
     const btn = document.getElementById(`btn-${studentId}`);
+    const origText = btn.textContent;
+    btn.textContent = 'جاري التوثيق...';
     btn.disabled = true;
-    btn.textContent = '...';
 
     const attendanceEl = document.querySelector(`input[name="att-${studentId}"]:checked`);
     const performanceEl = document.querySelector(`input[name="perf-${studentId}"]:checked`);
@@ -171,36 +177,74 @@ document.addEventListener('DOMContentLoaded', () => {
     const performance = performanceEl ? performanceEl.value : 'ممتاز';
     const tajweedVal = tajweedEl ? tajweedEl.value : 'متقن للأحكام';
     const note = document.getElementById(`note-${studentId}`).value;
+    const memo = document.getElementById(`memo-${studentId}`).value;
+    
+    // YYYY-MM-DD
+    function getSaudiDate() {
+       const today = new Date();
+       const offset = 3 * 60; 
+       const saudiTime = new Date(today.getTime() + offset * 60 * 1000);
+       return saudiTime.toISOString().split('T')[0];
+    }
+    const todayStr = getSaudiDate();
 
     const payload = {
-      student_id: studentId,
       attendance_status: attendance,
       performance: performance,
       tajweed: tajweedVal,
-      notes: note
+      notes: note,
+      memorized_part: memo
     };
 
     try {
-      const { error } = await supabase.from('evaluations').insert([payload]);
-      
-      // If it's a unique constraint violation (already evaluated today)
-      if (error && error.code === '23505') {
-        alert('لقد قمت بتقييم هذا الطالب اليوم مسبقاً!');
-        btn.textContent = 'حفظ';
-        btn.disabled = false;
-        return;
+      // Check if evaluated today
+      const { data: existingEval } = await supabase
+        .from('evaluations')
+        .select('id')
+        .eq('student_id', studentId)
+        .eq('eval_date', todayStr)
+        .maybeSingle();
+
+      if (existingEval) {
+        const { error } = await supabase.from('evaluations').update(payload).eq('id', existingEval.id);
+        if(error) throw error;
+      } else {
+        const { error } = await supabase.from('evaluations').insert([{ ...payload, student_id: studentId, eval_date: todayStr }]);
+        if(error) throw error;
       }
-      if (error) throw error;
+      
+      // Calculate new score instantly
+      const { data: evals } = await supabase.from('evaluations').select('*').eq('student_id', studentId);
+      let sPoints = 0;
+      (evals || []).forEach(ev => {
+        if (ev.performance === 'ممتاز') sPoints += 3;
+        else if (ev.performance === 'جيد جداً') sPoints += 2;
+        else if (ev.performance === 'جيد') sPoints += 1;
+      });
+      // Update DOM Score
+      const dynScore = document.getElementById(`dyn-score-${studentId}`);
+      if(dynScore) {
+         dynScore.textContent = sPoints;
+         dynScore.style.transform = "scale(1.5)";
+         dynScore.style.transition = "all 0.3s";
+         setTimeout(() => { dynScore.style.transform = "scale(1)"; }, 300);
+      }
+      // Update global context
+      if(window.currentScores) window.currentScores[studentId] = sPoints;
 
-      btn.textContent = 'تم ✓';
-      btn.style.backgroundColor = '#d1d5db';
-      btn.style.color = '#374151';
+      btn.style.background = 'var(--color-success)';
+      btn.textContent = 'تم توثيق اليوم ✓';
+      setTimeout(() => {
+        btn.style.background = 'var(--color-primary-dark)';
+        btn.textContent = origText;
+        btn.disabled = false;
+      }, 2000);
 
-    } catch (err) {
-      console.error(err);
-      alert('حدث خطأ أثناء الحفظ.');
+    } catch (error) {
+      console.error(error);
+      alert('حدث خطأ أثناء حفظ التقييم. راجع قاعدة البيانات.');
+      btn.textContent = 'إعادة المحاولة';
       btn.disabled = false;
-      btn.textContent = 'حفظ';
     }
   };
 

@@ -75,33 +75,53 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   function renderEvaluations(evals) {
-    evalsList.innerHTML = '';
+    const timeline = document.getElementById('timeline-list');
+    const oldTitle = document.querySelector('h2');
+    if(oldTitle && oldTitle.textContent.includes('أحدث التقييمات')) oldTitle.style.display = 'none';
+
     if (!evals || evals.length === 0) {
-      evalsList.innerHTML = '<p style="text-align:center; padding: 20px; color:#666;">لم يتم رصد أي تقييم أو تحضير لهذا الطالب حتى الآن.</p>';
+      timeline.innerHTML = '<li style="text-align:center; padding: 15px; color:#666; background:#f9fafb; border-radius:8px;">لا يوجد سجل تقييمات للطالب حتى الآن.</li>';
       return;
     }
 
-    evals.forEach(ev => {
-      // Format Badge Color
-      let perfClass = 'badge-weak';
-      if (ev.performance === 'ممتاز') perfClass = 'badge-excellent';
-      if (ev.performance.includes('جيد')) perfClass = 'badge-good';
+    timeline.innerHTML = '';
+    
+    // Sort descending by date (newest top)
+    evals.sort((a,b) => new Date(b.eval_date || b.created_at) - new Date(a.eval_date || a.created_at));
 
-      const div = document.createElement('div');
-      div.className = 'evaluation-card';
+    evals.forEach(ev => {
+      const dateStr = ev.eval_date || new Date(ev.created_at).toLocaleDateString('ar-SA');
+      const memoTxt = ev.memorized_part ? `<span style="display:block; font-size:0.95rem; color:var(--color-primary-dark); margin-top:8px; font-weight:bold;">📖 المحفوظ: ${ev.memorized_part}</span>` : '';
+      const noteTxt = (ev.notes && ev.notes.trim() !== '') ? `<span style="display:block; font-size:0.9rem; color:#666; margin-top:5px; border-right: 3px solid #ccc; padding-right: 8px;">📝 ملاحظة: ${ev.notes}</span>` : '';
       
-      div.innerHTML = `
-        <div style="flex:1;">
-          <div class="eval-date">🗓️ ${ev.eval_date}</div>
-          <div class="eval-notes">المسجل: ${ev.notes || 'لا يوجد ملاحظات إضافية'}</div>
+      let badgeColor = '#d1d5db';
+      if(ev.performance.includes('ممتاز')) badgeColor = '#fcd34d'; // goldish
+      else if(ev.performance.includes('جيد جداً')) badgeColor = '#bfdbfe'; // light blue
+
+      const li = document.createElement('li');
+      li.style.cssText = "padding: 15px; border: 1px solid #eee; border-radius: 8px; margin-bottom: 10px; background: #fff;";
+      li.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <strong style="color:#4b5563;">📅 ${dateStr}</strong>
+          <span style="background:${badgeColor}; color:#374151; padding:3px 10px; border-radius:15px; font-size:0.85rem; font-weight:bold;">${ev.performance}</span>
         </div>
-        <div style="text-align:left; display: flex; gap: 10px;">
-           <span class="eval-badge" style="background: #e5e7eb; color: #374151;">${ev.attendance_status}</span>
-           <span class="eval-badge ${perfClass}">${ev.performance}</span>
+        <div style="font-size: 0.95rem; margin-top:8px; display:flex; gap:15px;">
+          <span>التحضير: <strong>${ev.attendance_status}</strong></span>
+          <span>التجويد: <strong>${ev.tajweed || 'غير مقيم'}</strong></span>
         </div>
+        ${memoTxt}
+        ${noteTxt}
       `;
-      evalsList.appendChild(div);
+      timeline.appendChild(li);
     });
+
+    // Memo Cert Logic
+    const latest = evals[0];
+    if(latest.performance.includes('ممتاز') && latest.memorized_part && latest.memorized_part.trim().length > 0) {
+       document.getElementById('memo-cert-container').style.display = 'block';
+       document.getElementById('memo-cert-part').textContent = latest.memorized_part;
+       document.getElementById('memo-cert-student-name').textContent = document.getElementById('cert-student-name').textContent;
+    }
   }
 
   function showError(msg) {
@@ -109,7 +129,7 @@ document.addEventListener('DOMContentLoaded', () => {
     errorMsg.style.display = 'block';
   }
 
-  // Handle Modal visibility
+  // Handle Modal visibility for Original Cert
   downloadCertBtn.addEventListener('click', () => {
     document.getElementById('cert-modal').style.display = 'flex';
   });
@@ -118,37 +138,65 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('cert-modal').style.display = 'none';
   });
 
-  // Handle actual Certificate Download
+  // Handle Modal visibility for Memo Cert
+  const downloadMemoCertBtn = document.getElementById('download-memo-cert-btn');
+  if(downloadMemoCertBtn) {
+    downloadMemoCertBtn.addEventListener('click', () => {
+       document.getElementById('memo-cert-modal').style.display = 'flex';
+    });
+  }
+  const closeMemoModalBtn = document.getElementById('close-memo-cert-modal');
+  if(closeMemoModalBtn) {
+    closeMemoModalBtn.addEventListener('click', () => {
+       document.getElementById('memo-cert-modal').style.display = 'none';
+    });
+  }
+
+  // Handle actual Certificate Download (Participation)
   const execDownloadBtn = document.getElementById('execute-download-btn');
   execDownloadBtn.addEventListener('click', async () => {
-    const origText = execDownloadBtn.textContent;
-    execDownloadBtn.textContent = 'جاري التوليد والحفظ...';
-    execDownloadBtn.disabled = true;
+     generateAndDownloadImage('certificate-template', 'execute-download-btn', `شهادة_مشاركة_${document.getElementById('cert-student-name').textContent.replace(/ /g, '_')}.png`, 'cert-modal');
+  });
+
+  // Handle actual Certificate Download (Memorization)
+  const execMemoDownloadBtn = document.getElementById('execute-memo-download-btn');
+  if(execMemoDownloadBtn) {
+     execMemoDownloadBtn.addEventListener('click', async () => {
+        generateAndDownloadImage('memo-certificate-template', 'execute-memo-download-btn', `شهادة_إتمام_حفظ_${document.getElementById('cert-student-name').textContent.replace(/ /g, '_')}.png`, 'memo-cert-modal');
+     });
+  }
+
+  // Helper function for generation
+  async function generateAndDownloadImage(templateId, btnId, fileName, modalId) {
+    const btn = document.getElementById(btnId);
+    const origText = btn.textContent;
+    btn.textContent = 'جاري التوليد والحفظ...';
+    btn.disabled = true;
 
     try {
-      const template = document.getElementById('certificate-template');
+      const template = document.getElementById(templateId);
       const canvas = await html2canvas(template, {
         scale: 2, // High resolution
-        useCORS: true // Allow remote images like top4top logo
+        useCORS: true 
       });
       
       const imgData = canvas.toDataURL('image/png');
       const link = document.createElement('a');
       link.href = imgData;
-      link.download = `شهادة_مشاركة_${document.getElementById('cert-student-name').textContent.replace(/ /g, '_')}.png`;
+      link.download = fileName;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       
       // Close modal on success
-      setTimeout(() => { document.getElementById('cert-modal').style.display = 'none'; }, 500);
+      setTimeout(() => { document.getElementById(modalId).style.display = 'none'; }, 500);
 
     } catch (err) {
       console.error(err);
       alert('تعذر استخراج الشهادة تلقائياً. تأكد من متصفحك.');
     } finally {
-      execDownloadBtn.textContent = origText;
-      execDownloadBtn.disabled = false;
+      btn.textContent = origText;
+      btn.disabled = false;
     }
-  });
+  }
 });

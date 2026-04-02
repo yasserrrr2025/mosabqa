@@ -84,7 +84,24 @@
               <h3 style="color: var(--color-primary-dark); margin-bottom: 5px;">الطالب: <span id="r-name" style="color: var(--color-gold-dark);"></span></h3>
               <p style="font-size: 0.95rem;">الصف: <span id="r-grade" style="font-weight:bold;"></span> - الفصل: <span id="r-class" style="font-weight:bold;"></span></p>
             </div>
-            <button id="download-cert-btn" class="submit-btn" style="width: auto; background: var(--color-gold); padding: 0.8rem 1rem; box-shadow:none;">📜 تحميل شهادة إنجاز مصورة</button>
+            <div id="eval-results" style="display: none; margin-top: 2rem;">
+            <h3 style="color: var(--color-primary-dark); border-bottom: 2px solid var(--color-gold); padding-bottom: 0.5rem; margin-bottom: 1.5rem;">ملخص إنجاز الطالب في الدفعة</h3>
+            
+            <!-- شهادة التميز للحفظ (مخفية إلا للمتفوقين) -->
+            <div id="memo-cert-container" style="display:none; text-align: center; margin-bottom: 20px; padding: 15px; background: rgba(245, 158, 11, 0.1); border-radius: 10px; border: 1px dashed var(--color-gold);">
+              <p style="color: var(--color-gold-dark); font-weight:bold; margin-top:0;">🎉 مبارك! أتم ابنكم حفظ مقره بنجاح وتقييم ممتاز، وتم إصدار شهادة إتمام حفظ.</p>
+              <button id="download-memo-cert-btn" class="submit-btn" style="background: linear-gradient(135deg, #f59e0b, #b45309); color: #fff; width: auto; margin:0 auto; box-shadow: 0 4px 6px rgba(0,0,0,0.2);">🏆 فتح شهادة الحفظ والأجزاء</button>
+            </div>
+
+            <!-- سجل المتابعة التراكمي -->
+            <div id="eval-history" style="margin-top:20px; text-align:right;">
+               <h3 style="color:#333; font-size: 1.2rem; margin-bottom: 10px;">سجل المتابعة اليومية (المسار الزمني)</h3>
+               <ul id="timeline-list" style="list-style:none; padding:0;">
+                 <!-- يتم تعبئته برمجيا -->
+               </ul>
+            </div>
+
+            <button id="download-cert-btn" class="submit-btn" style="margin-top: 2rem; background: var(--color-primary-dark);">استخراج شهادة مشاركة (للدفعة)</button>
           </div>
 
           <h2 style="font-size: 1.3rem; margin-bottom: 1rem; color: var(--color-primary-dark); font-family: 'Amiri', serif;">أحدث التقييمات المسجلة:</h2>
@@ -131,9 +148,41 @@
         </div>
       </div>
 
+      <!-- شهادة إتمام الحفظ والتفوق -->
+      <div id="memo-cert-modal" class="modal-overlay" style="display:none;">
+        <div class="modal-content" style="max-width: 860px;">
+          <span class="close-modal" id="close-memo-cert-modal">&times;</span>
+          <div style="display:flex; justify-content: space-between; margin-bottom: 15px; align-items: center;">
+            <h3 style="margin:0; color:#b45309; font-family:'Cairo',sans-serif;">معاينة شهادة تفوق الحفظ</h3>
+            <button id="execute-memo-download-btn" class="submit-btn" style="width: auto; background: var(--color-success); padding: 0.5rem 1rem; margin:0; box-shadow:none;">⬇️ تحميل وحفظ الشهادة بالاسم</button>
+          </div>
+          
+          <div style="overflow-x: auto; padding-bottom: 10px;">
+            <div id="memo-certificate-template" style="width: 800px; height: 600px; padding: 40px; border: 15px solid #b45309; box-sizing: border-box; text-align: center; font-family: 'Amiri', serif; direction: rtl; position: relative; margin: 0 auto; background-color: #fffcf5; background-image: radial-gradient(#fef3c7 2px, transparent 2px); background-size: 30px 30px;">
+              <div style="border: 4px double #f59e0b; height: 100%; padding: 30px; position: relative; background: rgba(255,255,255,0.95);">
+                  <img src="https://www.raed.net/img?id=1531325" width="100" style="margin-bottom: 20px;">
+                  <h1 style="color: #b45309; font-size: 2.8rem; margin-bottom: 5px; line-height: 1;">شَهَادَةُ إِتْمَامِ حِفْظٍ وَتَفَوُّق</h1>
+                  <h2 style="color: #333; font-size: 1.5rem; margin-bottom: 30px;">حلقة تحفيظ وتجويد القرآن الكريم</h2>
+                  <p style="font-size: 1.4rem; color: #333; margin-bottom: 0;">بكل فخر واعتزاز، نُشهد بأن الطالب المتميز:</p>
+                  <h2 id="memo-cert-student-name" style="font-size: 2.2rem; color: #b45309; margin: 15px 0;">اسم الطالب</h2>
+                  <p style="font-size: 1.4rem; color: #333;">قد أتم بحمد الله حفظ وتسميع المنجز التالي:</p>
+                  <div style="background:#fef3c7; color:#b45309; padding:10px 20px; border-radius:10px; font-weight:bold; font-size:1.5rem; display:inline-block; margin-bottom:10px;" id="memo-cert-part">سورة الكهف</div>
+                  <p style="font-size: 1.2rem; color: #666;">بدرجة (ممتاز ومتقن للأحكام).<br>نسأل الله أن يجعله من أهل القرآن الذين هم أهل الله وخاصته.</p>
+                  
+                  <div style="display: flex; justify-content: space-between; margin-top: 30px; padding: 0 40px; font-family: 'Cairo', sans-serif;">
+                    <div><h3 style="color:#b45309; font-size: 1.2rem;">المعلم المباشر</h3><p style="color: #333; font-weight: bold;">فهد علي آل رده</p></div>
+                    <div><h3 style="color:#b45309; font-size: 1.2rem;">مدير المدرسة</h3><p style="color: #333; font-weight: bold;">عابد عبيد الجدعاني</p></div>
+                  </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div class="decorative-pattern top-left"></div>
       <div class="decorative-pattern bottom-right"></div>
     </div>
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
     <script type="module" src="/src/parent.js"></script>
   </body>
 </html>
