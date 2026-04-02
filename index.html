@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>التسجيل في حلقة تحفيظ القرآن الكريم</title>
+    <meta name="description" content="نموذج التسجيل في مسابقة وحلقة تحفيظ القرآن الكريم بمدرسة عماد الدين زنكي المتوسطة.">
+    
+    <!-- Google Fonts: Cairo for Arabic interface -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="/src/style.css">
+  </head>
+  <body>
+    <div class="app-container">
+      <div id="loading-screen" class="loading-state">
+        <div class="loader"></div>
+        <p>جاري التحقق من حالة التسجيل...</p>
+      </div>
+
+      <div class="registration-card" id="main-content" style="display: none;">
+        <header class="card-header">
+          <div class="ministry-logo">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/e/e0/Ministry_of_Education_Logo_%28Saudi_Arabia%29.svg" alt="شعار وزارة التعليم" width="180" style="margin-bottom: 0.5rem;">
+          </div>
+          <h1 class="main-title">التقديم في حلقة <br> <span class="highlight-title">تحفيظ القرآن الكريم</span></h1>
+          <p class="subtitle">مدرسة عماد الدين زنكي المتوسطة</p>
+        </header>
+
+        <div id="registration-form-container" class="form-container">
+          <div class="status-badge" id="counter-badge">
+            <span class="pulse-dot"></span>
+            تحديث مباشر: <strong id="registered-count">0</strong> / 25 مسجل
+          </div>
+
+          <form id="sebaq-form">
+            <div class="form-group">
+              <label for="fullName">اسم الطالب رباعي <span class="required">*</span></label>
+              <input type="text" id="fullName" name="fullName" required placeholder="أدخل اسم الطالب رباعياً" minlength="10" />
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="grade">الصف الدراسي <span class="required">*</span></label>
+                <div class="select-wrapper">
+                  <select id="grade" name="grade" required>
+                    <option value="" disabled selected>اختر الصف</option>
+                    <option value="الأول متوسط">الأول متوسط</option>
+                    <option value="الثاني متوسط">الثاني متوسط</option>
+                    <option value="الثالث متوسط">الثالث متوسط</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="classNumber">الفصل <span class="required">*</span></label>
+                <div class="select-wrapper">
+                  <select id="classNumber" name="classNumber" required>
+                    <option value="" disabled selected>اختر الفصل</option>
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                    <option value="5">5</option>
+                    <option value="6">6</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="parentPhone">رقم جوال ولي الأمر <span class="required">*</span></label>
+              <input type="tel" id="parentPhone" name="parentPhone" required placeholder="05XXXXXXXX" pattern="05[0-9]{8}" maxlength="10" title="يجب أن يبدأ الرقم بـ 05 ويتكون من 10 أرقام" dir="ltr" inputmode="numeric" />
+              <span class="hinttext">يجب أن يبدأ الرقم بـ 05 ويتكون من 10 أرقام</span>
+            </div>
+
+            <button type="submit" class="submit-btn" id="submit-btn">
+              <span>تسجيل الطالب</span>
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
+            </button>
+            <div id="form-feedback" class="feedback-message"></div>
+          </form>
+        </div>
+
+        <div id="limit-reached-container" class="limit-reached-message" style="display: none;">
+          <div class="icon-wrapper">
+            <svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="var(--color-gold)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z"></path><path d="M12 8v4"></path><path d="M12 16h.01"></path></svg>
+          </div>
+          <h2>عذراً، اكتمل العدد!</h2>
+          <p>لقد وصلنا إلى الحد الأقصى المسموح به للتسجيل (25 طالب).</p>
+          <p class="secondary-info">نشكر لكم حرصكم واهتمامكم، ونسأل الله التوفيق لجميع الطلاب.</p>
+        </div>
+      </div>
+      
+      <div class="decorative-pattern top-left"></div>
+      <div class="decorative-pattern bottom-right"></div>
+    </div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
