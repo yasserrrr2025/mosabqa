@@ -80,8 +80,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       document.getElementById('success-student-name').textContent = `بشرى سارة! تم تسجيل الطالب "${data.full_name}" بنجاح.. شكراً لثقتكم.`;
       document.getElementById('success-container').style.display = 'block';
       
-      // Update count
-      await checkRegistrationStatus(false);
+      // تحديث العداد رقمياً فقط دون إعادة رسم الفورم لكي لا تختفي رسالة النجاح
+      const currentCountEl = document.getElementById('registered-count');
+      if (currentCountEl) {
+        currentCountEl.textContent = parseInt(currentCountEl.textContent || '0') + 1;
+      }
 
     } catch (error) {
       console.error("Submission error:", error);
