@@ -108,27 +108,30 @@
             <button onclick="window.print()" class="submit-btn" style="width: auto; padding: 0.5rem 1rem; margin: 0; background: var(--color-primary-dark); box-shadow: none;">🖨️ طباعة التقرير</button>
           </div>
 
-          <div style="overflow-x: auto;">
-            <table class="students-table">
+          <div style="overflow-x: auto;" class="print-text">
+            <table class="students-table print-table">
               <thead>
                 <tr>
                   <th width="30%">اسم الطالب</th>
                   <th width="20%">التحضير</th>
                   <th width="20%">مستوى التسميع</th>
-                  <th width="20%">ملاحظات وإنجاز</th>
-                  <th width="10%">إجراء</th>
+                  <th width="30%">ملاحظات وإنجاز</th>
                 </tr>
               </thead>
-              <tbody id="students-table-body">
-                <!-- Data will be injected here via JS -->
+              <tbody id="print-table-body">
+                <!-- Data will be injected here via JS for printing only -->
               </tbody>
             </table>
           </div>
 
+          <div id="students-grid" class="students-grid">
+            <!-- Cards will be injected here via JS -->
+          </div>
+
           <div class="print-only-signature">
-            <div style="text-align: center;">توقيع المعلم المباشر:<br><br>......................</div>
+            <div style="text-align: center;">توقيع المعلم المباشر:<br><br>فهد علي آل رده</div>
             <div style="text-align: center;">الختم الرسمي:<br><br>......................</div>
-            <div style="text-align: center;">مدير المدرسة:<br><br>......................</div>
+            <div style="text-align: center;">مدير المدرسة:<br><br>عابد عبيد الجدعاني</div>
           </div>
         </div>
 

@@ -11,7 +11,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const dashboardSection = document.getElementById('dashboard-section');
   const errorMsg = document.getElementById('login-error');
   const currentBatchBadge = document.getElementById('batch-number-badge');
-  const tableBody = document.getElementById('students-table-body');
   
   // Display today's date
   document.getElementById('current-date-display').textContent = new Date().toLocaleDateString('ar-SA', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
@@ -67,48 +66,81 @@ document.addEventListener('DOMContentLoaded', () => {
       });
 
       if (!students || students.length === 0) {
-        tableBody.innerHTML = '<tr><td colspan="5" style="text-align:center;">لا يوجد طلاب مسجلون في هذه الدفعة بعد.</td></tr>';
+        document.getElementById('students-grid').innerHTML = '<div style="grid-column: 1/-1; text-align:center; padding: 2rem;">لا يوجد طلاب مسجلون في هذه الدفعة بعد.</div>';
         return;
       }
 
-      tableBody.innerHTML = '';
+      const studentsGrid = document.getElementById('students-grid');
+      const printTableBody = document.getElementById('print-table-body');
+      
+      studentsGrid.innerHTML = '';
+      if(printTableBody) printTableBody.innerHTML = '';
+      
       let rank = 1;
+
       students.forEach(student => {
         const score = scores[student.id] || 0;
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>
-            <strong><span class="print-text" style="display:inline-block!important; width:20px; color:#666;">${rank}-</span> ${student.full_name}</strong><br>
-            <span style="font-size:0.8rem; color:#666;">${student.grade} - فصل ${student.class_number}</span>
-            <span class="print-text" style="color:var(--color-primary-dark); font-size:0.9rem; font-weight:bold; margin-right: 10px;">(النقاط: ${score})</span>
-          </td>
-          <td>
-            <select class="action-select" id="att-${student.id}">
-              <option value="حاضر">حاضر</option>
-              <option value="غائب">غائب</option>
-              <option value="مستأذن">مستأذن</option>
-            </select>
-            <span class="print-text">............</span>
-          </td>
-          <td>
-            <select class="action-select" id="perf-${student.id}">
-              <option value="ممتاز">ممتاز</option>
-              <option value="جيد جداً">جيد جداً</option>
-              <option value="جيد">جيد</option>
-              <option value="ضعيف">ضعيف</option>
-            </select>
-            <span class="print-text">............</span>
-          </td>
-          <td>
-            <input type="text" class="notes-input" id="note-${student.id}" placeholder="مثال: أتم حفظ وجهين">
-            <span class="print-text">........................</span>
-          </td>
-          <td>
-            <button class="save-btn" onclick="window.saveEval('${student.id}')" id="btn-${student.id}">حفظ</button>
-            <span class="print-text">........</span>
-          </td>
+        
+        // 1. Interactive Card
+        const card = document.createElement('div');
+        card.className = 'student-eval-card';
+        card.innerHTML = `
+          <div style="display: flex; justify-content: space-between; align-items: start;">
+            <h3>${rank}. ${student.full_name}</h3>
+            <span style="background: rgba(198,162,86,0.1); color: var(--color-gold-dark); padding: 4px 10px; border-radius: 10px; font-weight: bold; font-size: 0.85rem;">نقاط: ${score}</span>
+          </div>
+          <p style="color: #666; font-size: 0.9rem; margin-top: -5px; margin-bottom: 15px;">${student.grade} - فصل ${student.class_number}</p>
+          
+          <div class="eval-card-row">
+            <label>حالة التحضير:</label>
+            <div class="pill-group">
+              <input type="radio" name="att-${student.id}" id="att-present-${student.id}" class="pill-radio" value="حاضر" checked>
+              <label for="att-present-${student.id}" class="pill-label">حاضر</label>
+              
+              <input type="radio" name="att-${student.id}" id="att-late-${student.id}" class="pill-radio" value="مستأذن">
+              <label for="att-late-${student.id}" class="pill-label">مستأذن</label>
+              
+              <input type="radio" name="att-${student.id}" id="att-absent-${student.id}" class="pill-radio" value="غائب">
+              <label for="att-absent-${student.id}" class="pill-label">غائب</label>
+            </div>
+          </div>
+          
+          <div class="eval-card-row">
+            <label>مستوى التسميع والحفظ:</label>
+            <div class="pill-group">
+              <input type="radio" name="perf-${student.id}" id="perf-exc-${student.id}" class="pill-radio perf-excellent" value="ممتاز" checked>
+              <label for="perf-exc-${student.id}" class="pill-label">ممتاز</label>
+              
+              <input type="radio" name="perf-${student.id}" id="perf-vg-${student.id}" class="pill-radio perf-vgood" value="جيد جداً">
+              <label for="perf-vg-${student.id}" class="pill-label">جيد جداً</label>
+              
+              <input type="radio" name="perf-${student.id}" id="perf-g-${student.id}" class="pill-radio perf-good" value="جيد">
+              <label for="perf-g-${student.id}" class="pill-label">جيد</label>
+              
+              <input type="radio" name="perf-${student.id}" id="perf-w-${student.id}" class="pill-radio perf-weak" value="ضعيف">
+              <label for="perf-w-${student.id}" class="pill-label">ضعيف</label>
+            </div>
+          </div>
+
+          <div class="eval-card-row" style="margin-top: 15px;">
+            <input type="text" class="notes-input" id="note-${student.id}" placeholder="اكتب ملاحظاتك على الإنجاز..." style="margin-bottom: 15px;">
+            <button class="save-btn" style="width: 100%; border-radius: 20px;" onclick="window.saveEval('${student.id}')" id="btn-${student.id}">تأكيد المهارات وحفظ</button>
+          </div>
         `;
-        tableBody.appendChild(tr);
+        studentsGrid.appendChild(card);
+
+        // 2. Print Row (Static for the print layout)
+        if(printTableBody) {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td><strong>${rank}- ${student.full_name}</strong></td>
+            <td>....................</td>
+            <td>....................</td>
+            <td>........................................</td>
+          `;
+          printTableBody.appendChild(tr);
+        }
+
         rank++;
       });
 
@@ -124,8 +156,11 @@ document.addEventListener('DOMContentLoaded', () => {
     btn.disabled = true;
     btn.textContent = '...';
 
-    const attendance = document.getElementById(`att-${studentId}`).value;
-    const performance = document.getElementById(`perf-${studentId}`).value;
+    const attendanceEl = document.querySelector(`input[name="att-${studentId}"]:checked`);
+    const performanceEl = document.querySelector(`input[name="perf-${studentId}"]:checked`);
+    
+    const attendance = attendanceEl ? attendanceEl.value : 'حاضر';
+    const performance = performanceEl ? performanceEl.value : 'ممتاز';
     const note = document.getElementById(`note-${studentId}`).value;
 
     const payload = {

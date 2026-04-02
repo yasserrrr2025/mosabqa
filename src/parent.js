@@ -57,17 +57,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if (evalErr) throw evalErr;
 
-      // Calculate score for certificate
-      let totalScore = 0;
-      (evals || []).forEach(ev => {
-        if (ev.performance === 'ممتاز') totalScore += 3;
-        else if (ev.performance === 'جيد جداً') totalScore += 2;
-        else if (ev.performance === 'جيد') totalScore += 1;
-      });
-
       // Populate Certificate
       document.getElementById('cert-student-name').textContent = student.full_name;
-      document.getElementById('cert-student-score').textContent = totalScore;
 
       renderEvaluations(evals);
 
@@ -118,11 +109,21 @@ document.addEventListener('DOMContentLoaded', () => {
     errorMsg.style.display = 'block';
   }
 
-  // Handle Certificate Download
-  downloadCertBtn.addEventListener('click', async () => {
-    const origText = downloadCertBtn.textContent;
-    downloadCertBtn.textContent = 'جاري التوليد...';
-    downloadCertBtn.disabled = true;
+  // Handle Modal visibility
+  downloadCertBtn.addEventListener('click', () => {
+    document.getElementById('cert-modal').style.display = 'flex';
+  });
+  
+  document.getElementById('close-cert-modal').addEventListener('click', () => {
+    document.getElementById('cert-modal').style.display = 'none';
+  });
+
+  // Handle actual Certificate Download
+  const execDownloadBtn = document.getElementById('execute-download-btn');
+  execDownloadBtn.addEventListener('click', async () => {
+    const origText = execDownloadBtn.textContent;
+    execDownloadBtn.textContent = 'جاري التوليد والحفظ...';
+    execDownloadBtn.disabled = true;
 
     try {
       const template = document.getElementById('certificate-template');
@@ -134,17 +135,20 @@ document.addEventListener('DOMContentLoaded', () => {
       const imgData = canvas.toDataURL('image/png');
       const link = document.createElement('a');
       link.href = imgData;
-      link.download = `شهادة_شكر_${document.getElementById('cert-student-name').textContent.replace(/ /g, '_')}.png`;
+      link.download = `شهادة_مشاركة_${document.getElementById('cert-student-name').textContent.replace(/ /g, '_')}.png`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       
+      // Close modal on success
+      setTimeout(() => { document.getElementById('cert-modal').style.display = 'none'; }, 500);
+
     } catch (err) {
       console.error(err);
       alert('تعذر استخراج الشهادة تلقائياً. تأكد من متصفحك.');
     } finally {
-      downloadCertBtn.textContent = origText;
-      downloadCertBtn.disabled = false;
+      execDownloadBtn.textContent = origText;
+      execDownloadBtn.disabled = false;
     }
   });
 });

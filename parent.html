@@ -97,25 +97,37 @@
       </div>
       
       <!-- شهادة الشكر الخفية (تستخدم فقط للتصوير لولي الأمر) -->
-      <div id="certificate-template" style="position: absolute; top: -9999px; left: -9999px; width: 800px; height: 600px; background: #fffcf5; padding: 40px; border: 15px solid var(--color-primary); box-sizing: border-box; text-align: center; font-family: 'Amiri', serif; direction: rtl;">
-        <div style="border: 2px solid var(--color-gold); height: 100%; padding: 30px; position: relative;">
-            <!-- Decorative Corners -->
-            <div style="position: absolute; top: 10px; left: 10px; width: 50px; height: 50px; border-top: 4px solid var(--color-gold); border-left: 4px solid var(--color-gold);"></div>
-            <div style="position: absolute; top: 10px; right: 10px; width: 50px; height: 50px; border-top: 4px solid var(--color-gold); border-right: 4px solid var(--color-gold);"></div>
-            <div style="position: absolute; bottom: 10px; left: 10px; width: 50px; height: 50px; border-bottom: 4px solid var(--color-gold); border-left: 4px solid var(--color-gold);"></div>
-            <div style="position: absolute; bottom: 10px; right: 10px; width: 50px; height: 50px; border-bottom: 4px solid var(--color-gold); border-right: 4px solid var(--color-gold);"></div>
+      <div id="cert-modal" class="modal-overlay" style="display:none;">
+        <div class="modal-content" style="max-width: 860px;">
+          <span class="close-modal" id="close-cert-modal">&times;</span>
+          <div style="display:flex; justify-content: space-between; margin-bottom: 15px; align-items: center;">
+            <h3 style="margin:0; color:var(--color-primary-dark); font-family:'Cairo',sans-serif;">معاينة شهادة الشكر</h3>
+            <button id="execute-download-btn" class="submit-btn" style="width: auto; background: var(--color-success); padding: 0.5rem 1rem; margin:0; box-shadow:none;">⬇️ تحميل المعاينة كصورة</button>
+          </div>
+          
+          <div style="overflow-x: auto; padding-bottom: 10px;">
+            <div id="certificate-template" style="width: 800px; height: 600px; background: #fffcf5; padding: 40px; border: 15px solid var(--color-primary); box-sizing: border-box; text-align: center; font-family: 'Amiri', serif; direction: rtl; position: relative; margin: 0 auto;">
+              <div style="border: 2px solid var(--color-gold); height: 100%; padding: 30px; position: relative;">
+                  <!-- Decorative Corners -->
+                  <div style="position: absolute; top: 10px; left: 10px; width: 50px; height: 50px; border-top: 4px solid var(--color-gold); border-left: 4px solid var(--color-gold);"></div>
+                  <div style="position: absolute; top: 10px; right: 10px; width: 50px; height: 50px; border-top: 4px solid var(--color-gold); border-right: 4px solid var(--color-gold);"></div>
+                  <div style="position: absolute; bottom: 10px; left: 10px; width: 50px; height: 50px; border-bottom: 4px solid var(--color-gold); border-left: 4px solid var(--color-gold);"></div>
+                  <div style="position: absolute; bottom: 10px; right: 10px; width: 50px; height: 50px; border-bottom: 4px solid var(--color-gold); border-right: 4px solid var(--color-gold);"></div>
 
-            <img src="https://h.top4top.io/p_3744p7ah61.png" width="120" style="margin-bottom: 20px;">
-            <h1 style="color: var(--color-primary-dark); font-size: 2.8rem; margin-bottom: 5px; line-height: 1;">شَهَادَةُ شُكْرٍ وَتَقْدِير</h1>
-            <h2 style="color: var(--color-gold-dark); font-size: 1.5rem; margin-bottom: 30px;">حلقة تحفيظ القرآن الكريم</h2>
-            <p style="font-size: 1.4rem; color: #333; margin-bottom: 0;">بكل فخر واعتزاز، نتقدم بأسمى آيات الشكر والتقدير للطالب المتميز:</p>
-            <h2 id="cert-student-name" style="font-size: 2.2rem; color: var(--color-primary); margin: 15px 0;">اسم الطالب</h2>
-            <p style="font-size: 1.3rem; color: #333;">نظير تفوقه واجتهاده في الحفظ والمراجعة، حيث حصد <span id="cert-student-score" style="font-weight:bold; color:var(--color-gold-dark); font-size: 1.5rem;">0</span> نقطة من التميز.<br>سائلين المولى له دوام التوفيق وأن يجعله من أهل القرآن الميمونين.</p>
-            
-            <div style="display: flex; justify-content: space-between; margin-top: 40px; padding: 0 40px; font-family: 'Cairo', sans-serif;">
-              <div><h3 style="color:var(--color-primary-dark); font-size: 1.2rem;">المعلم المباشر</h3><p style="color: #666;">...............</p></div>
-              <div><h3 style="color:var(--color-primary-dark); font-size: 1.2rem;">مدير المدرسة</h3><p style="color: #666;">...............</p></div>
+                  <img src="https://h.top4top.io/p_3744p7ah61.png" width="120" style="margin-bottom: 20px;">
+                  <h1 style="color: var(--color-primary-dark); font-size: 2.8rem; margin-bottom: 5px; line-height: 1;">شَهَادَةُ شُكْرٍ وَمُشَارَكَة</h1>
+                  <h2 style="color: var(--color-gold-dark); font-size: 1.5rem; margin-bottom: 30px;">حلقة تحفيظ القرآن الكريم</h2>
+                  <p style="font-size: 1.4rem; color: #333; margin-bottom: 0;">يسر إدارة المدرسة ومعلم الحلقة تقديم خالص الشكر والتقدير للطالب الفاعل:</p>
+                  <h2 id="cert-student-name" style="font-size: 2.2rem; color: var(--color-primary); margin: 15px 0;">اسم الطالب</h2>
+                  <p style="font-size: 1.3rem; color: #333;">نظير تفاعله المستمر ومشاركته المثمرة في حلقة تحفيظ وتجويد القرآن الكريم.<br>سائلين المولى عز وجل له دوام التوفيق والسداد، وأن يجعله من أهل القرآن الميمونين.</p>
+                  
+                  <div style="display: flex; justify-content: space-between; margin-top: 40px; padding: 0 40px; font-family: 'Cairo', sans-serif;">
+                    <div><h3 style="color:var(--color-primary-dark); font-size: 1.2rem;">المعلم المباشر</h3><p style="color: #333; font-weight: bold;">فهد علي آل رده</p></div>
+                    <div><h3 style="color:var(--color-primary-dark); font-size: 1.2rem;">مدير المدرسة</h3><p style="color: #333; font-weight: bold;">عابد عبيد الجدعاني</p></div>
+                  </div>
+              </div>
             </div>
+          </div>
         </div>
       </div>
 
