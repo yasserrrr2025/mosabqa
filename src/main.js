@@ -40,6 +40,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const formData = new FormData(form);
     const data = {
       full_name: formData.get('fullName').trim(),
+      national_id: formData.get('nationalId').trim(),
+      nationality: formData.get('nationality').trim(),
       grade: formData.get('grade'),
       class_number: formData.get('classNumber'),
       parent_phone: formData.get('parentPhone').trim()
