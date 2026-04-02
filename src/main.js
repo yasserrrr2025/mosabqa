@@ -112,7 +112,12 @@ document.addEventListener('DOMContentLoaded', async () => {
       form.dataset.batch = currentBatch;
 
       if (!forceOpen) {
-        showLimitReached();
+        if (initialLoad) {
+          loadingScreen.style.display = 'none';
+          mainContent.style.display = 'block';
+        }
+        formContainer.style.display = 'none';
+        limitReachedContainer.style.display = 'block';
         return true;
       }
 
@@ -124,28 +129,36 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (error) throw error;
 
       if (count >= maxCapacity) {
-        showLimitReached();
+        if (initialLoad) {
+          loadingScreen.style.display = 'none';
+          mainContent.style.display = 'block';
+        }
+        if(registeredCountEl) registeredCountEl.textContent = count;
+        document.getElementById('counter-badge').innerHTML = `تحديث مباشر: <strong>${count}</strong> / ${maxCapacity} مسجل`;
+        formContainer.style.display = 'none';
+        limitReachedContainer.style.display = 'block';
         return true;
       }
 
-      return handleStatusUpdate(count || 0, initialLoad);
+      return handleStatusUpdate(count || 0, maxCapacity, initialLoad);
     } catch (error) {
       console.error("Error in checkRegistrationStatus:", error);
       throw error;
     }
-
-    return handleStatusUpdate(count || 0, initialLoad);
   }
 
-  function handleStatusUpdate(count, initialLoad) {
-    if(registeredCountEl) registeredCountEl.textContent = count;
+  function handleStatusUpdate(count, maxCapacity, initialLoad) {
+    if(registeredCountEl) {
+      document.getElementById('counter-badge').innerHTML = `<span class="pulse-dot"></span>تحديث مباشر: <strong id="registered-count">${count}</strong> / ${maxCapacity} مسجل`;
+    }
 
     if (initialLoad) {
       loadingScreen.style.display = 'none';
       mainContent.style.display = 'block';
     }
 
-    if (count >= REGISTRATION_LIMIT) {
+    // Secondary fallback check just in case
+    if (count >= maxCapacity) {
       formContainer.style.display = 'none';
       limitReachedContainer.style.display = 'block';
       return true; // is full
