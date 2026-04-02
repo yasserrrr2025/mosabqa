@@ -13,134 +13,177 @@
       --color-gold-dark: #8b733d;
       --bg-light: #f8fafc;
     }
-    body {
+    
+    @page {
+      size: A4 landscape;
+      margin: 0;
+    }
+
+    html, body {
       margin: 0;
       padding: 0;
+      width: 100%;
+      height: 100%;
+      box-sizing: border-box;
+    }
+
+    body {
       background: #e2e8f0;
       display: flex;
       justify-content: center;
       align-items: center;
-      min-height: 100vh;
       font-family: 'Amiri', serif;
     }
 
+    /* Container perfectly mirroring A4 aspect ratio 1:1.414 */
     #cert-container {
-      width: 1122px; /* A4 Landscape width at 96 DPI */
-      height: 793px; /* A4 Landscape height at 96 DPI */
+      width: 90vw;
+      max-width: 1122px;
+      aspect-ratio: 1.414 / 1;
       background: #fffcf5;
-      padding: 40px;
-      box-sizing: border-box;
+      box-shadow: 0 15px 40px rgba(0,0,0,0.25);
       position: relative;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      box-sizing: border-box;
+      padding: 15px; /* Outer Frame width */
+      overflow: hidden;
     }
 
-    /* Patterns based on type */
-    .theme-part #cert-container {
-      border: 15px solid var(--color-primary);
+    /* Outer Border Styles */
+    .theme-part #cert-container { background: var(--color-primary-dark); }
+    .theme-memo #cert-container { background: #b45309; }
+
+    /* The White Certificate Canvas */
+    .cert-canvas {
+      width: 100%;
+      height: 100%;
+      background: #fffcf5;
+      padding: 10px;
+      box-sizing: border-box;
+      position: relative;
     }
-    .theme-memo #cert-container {
-      border: 15px solid #b45309;
+    
+    /* Background Pattern for Memo */
+    .theme-memo .cert-canvas {
       background-image: radial-gradient(#fef3c7 2px, transparent 2px);
       background-size: 30px 30px;
     }
 
+    /* The Elegant Inner Frame */
     .inner-border {
+      width: 100%;
       height: 100%;
-      padding: 30px;
+      box-sizing: border-box;
       position: relative;
       background: rgba(255,255,255,0.95);
       text-align: center;
       display: flex;
       flex-direction: column;
       justify-content: center;
+      align-items: center;
+      padding: 2% 5%;
     }
 
-    .theme-part .inner-border { border: 2px solid var(--color-gold); }
-    .theme-memo .inner-border { border: 5px double #f59e0b; }
+    /* Elegant Corner Ornaments (Using Border rendering) */
+    .corner { width: 50px; height: 50px; position: absolute; }
+    .corner-tl { top: 10px; left: 10px; border-top: 3px solid; border-left: 3px solid; }
+    .corner-tr { top: 10px; right: 10px; border-top: 3px solid; border-right: 3px solid; }
+    .corner-bl { bottom: 10px; left: 10px; border-bottom: 3px solid; border-left: 3px solid; }
+    .corner-br { bottom: 10px; right: 10px; border-bottom: 3px solid; border-right: 3px solid; }
 
-    /* Titles and text */
-    h1 { margin: 0 0 10px 0; font-size: 3.5rem; line-height: 1; }
+    .theme-part .inner-border { border: 2px solid var(--color-gold); }
+    .theme-part .corner { border-color: var(--color-gold); }
+    
+    .theme-memo .inner-border { border: 4px double #f59e0b; }
+    .theme-memo .corner { border-color: #f59e0b; }
+
+    /* Typography & Spacing designed to scale dynamically */
+    img.logo { width: 12%; margin-bottom: 1.5%; min-width: 80px; }
+    
+    h1 { margin: 0; font-size: 3.8vw; line-height: 1; font-weight: bold; }
     .theme-part h1 { color: var(--color-primary-dark); }
     .theme-memo h1 { color: #b45309; }
 
-    h2.subtitle { font-size: 1.8rem; margin: 0 0 30px 0; font-family: 'Cairo', sans-serif; }
+    h2.subtitle { font-size: 1.6vw; margin: 1% 0 3%; font-family: 'Cairo', sans-serif; font-weight: 700; }
     .theme-part h2.subtitle { color: var(--color-gold-dark); }
-    .theme-memo h2.subtitle { color: #333; }
+    .theme-memo h2.subtitle { color: #555; }
 
-    .student-name { font-size: 3rem; margin: 20px 0; font-weight: bold; }
+    .student-name { font-size: 3.2vw; margin: 2% 0; font-weight: bold; letter-spacing: 1px; }
     .theme-part .student-name { color: var(--color-primary); }
-    .theme-memo .student-name { color: #b45309; }
+    .theme-memo .student-name { color: #d97706; }
 
-    p.intro { font-size: 1.6rem; color: #333; margin: 0; }
+    p.intro { font-size: 1.5vw; color: #333; margin: 0; font-weight: 600; }
     
     .memo-badge {
-      background: #fef3c7; color: #b45309; padding: 10px 30px; border-radius: 15px;
-      font-weight: bold; font-size: 1.8rem; display: inline-block; margin: 15px 0;
+      background: #fef3c7; color: #b45309; padding: 1% 3%; border-radius: 50px;
+      font-weight: bold; font-size: 1.8vw; display: inline-block; margin: 1% 0;
+      border: 1px dashed #f59e0b;
     }
 
-    p.description { font-size: 1.4rem; color: #555; margin-bottom: 40px; line-height: 1.6; }
+    p.description { font-size: 1.4vw; color: #444; margin-bottom: auto; margin-top: 1%; line-height: 1.8; }
 
     .signatures {
       display: flex;
       justify-content: space-between;
-      margin-top: auto;
-      padding: 0 60px;
+      width: 100%;
+      padding: 0 5%;
+      box-sizing: border-box;
       font-family: 'Cairo', sans-serif;
+      margin-bottom: 2%;
     }
-    .sig-block h3 { font-size: 1.4rem; margin: 0 0 5px 0; }
+    .sig-block { text-align: center; }
+    .sig-block h3 { font-size: 1.3vw; margin: 0 0 5px 0; }
     .theme-part .sig-block h3 { color: var(--color-primary-dark); }
     .theme-memo .sig-block h3 { color: #b45309; }
-    .sig-block p { font-size: 1.2rem; font-weight: bold; margin: 0; color: #333; }
+    .sig-block p { font-size: 1.2vw; font-weight: bold; margin: 0; color: #333; }
 
     /* Print Button */
     .print-fab {
       position: fixed;
-      bottom: 30px;
+      bottom: 25px;
       left: 50%;
       transform: translateX(-50%);
       background: var(--color-primary-dark);
       color: white;
       border: none;
-      padding: 15px 40px;
+      padding: 12px 30px;
       border-radius: 30px;
       font-family: 'Cairo', sans-serif;
-      font-size: 1.2rem;
+      font-size: 1.1rem;
       font-weight: bold;
       cursor: pointer;
       box-shadow: 0 5px 15px rgba(0,0,0,0.3);
       z-index: 1000;
+      transition: all 0.2s;
     }
-    .print-fab:hover { background: var(--color-primary); }
+    .print-fab:hover { background: var(--color-primary); transform: translateX(-50%) translateY(-2px); }
 
-    /* Mobile Scaling */
-    @media screen and (max-width: 1200px) {
-      #cert-container {
-        transform: scale(0.8);
-      }
-    }
-    @media screen and (max-width: 900px) {
-      #cert-container {
-        transform: scale(0.6);
-      }
-    }
-    @media screen and (max-width: 600px) {
-      #cert-container {
-        transform: scale(0.32);
-      }
+    /* Max Width scaling caps (for ultra wide Desktop screens) */
+    @media (min-width: 1200px) {
+      h1 { font-size: 45px; }
+      h2.subtitle { font-size: 20px; }
+      .student-name { font-size: 38px; }
+      p.intro { font-size: 18px; }
+      .memo-badge { font-size: 22px; }
+      p.description { font-size: 16px; }
+      .sig-block h3 { font-size: 16px; }
+      .sig-block p { font-size: 15px; }
     }
 
-    /* Print Specifics to enforce A4 Landscape */
-    @page {
-      size: A4 landscape;
-      margin: 0;
-    }
+    /* Print Specifics to enforce 100% boundary */
     @media print {
-      body { background: white; align-items: start; min-height: 0; }
+      html, body {
+         width: 100vw;
+         height: 100vh;
+         background: white;
+         display: block; /* critical to avoid flex causing page break */
+      }
       #cert-container {
-        transform: scale(1) !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        max-width: none !important;
+        aspect-ratio: auto !important;
         box-shadow: none !important;
-        width: 297mm;
-        height: 210mm;
+        padding: 5mm !important; /* Keep outer border safely inside page */
       }
       .print-fab { display: none !important; }
     }
@@ -152,7 +195,12 @@
 
   <div id="cert-container">
     <div class="inner-border">
-      <img src="https://www.raed.net/img?id=1531325" width="130" style="margin: 0 auto 20px auto;">
+      <div class="corner corner-tl"></div>
+      <div class="corner corner-tr"></div>
+      <div class="corner corner-bl"></div>
+      <div class="corner corner-br"></div>
+      
+      <img src="https://www.raed.net/img?id=1531325" class="logo">
       
       <h1 id="title">شَهَادَةُ شُكْرٍ وَمُشَارَكَة</h1>
       <h2 class="subtitle">حلقة تحفيظ وتجويد القرآن الكريم</h2>
