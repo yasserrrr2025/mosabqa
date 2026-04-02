@@ -57,9 +57,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if (evalErr) throw evalErr;
 
-      // Populate Certificate
-      document.getElementById('cert-student-name').textContent = student.full_name;
-
+      // Prepare UI for rendering
       renderEvaluations(evals);
 
       // Show Report
@@ -117,12 +115,10 @@ document.addEventListener('DOMContentLoaded', () => {
       timeline.appendChild(li);
     });
 
-    // Memo Cert Logic
     const latest = evals[0];
-    if(latest.performance.includes('ممتاز') && latest.memorized_part && latest.memorized_part.trim().length > 0) {
+    if(latest.performance && latest.performance.includes('ممتاز') && latest.memorized_part && latest.memorized_part.trim().length > 0) {
        document.getElementById('memo-cert-container').style.display = 'block';
        document.getElementById('memo-cert-part').textContent = latest.memorized_part;
-       document.getElementById('memo-cert-student-name').textContent = document.getElementById('cert-student-name').textContent;
     }
   }
 
@@ -134,7 +130,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Handle actual Certificate Download (Participation)
   if(downloadCertBtn) {
     downloadCertBtn.addEventListener('click', () => {
-      const studentName = document.getElementById('cert-student-name').textContent;
+      const studentName = document.getElementById('r-name').textContent;
       window.open(`/certificate.html?type=part&name=${encodeURIComponent(studentName)}`, '_blank');
     });
   }
@@ -143,7 +139,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const downloadMemoCertBtn = document.getElementById('download-memo-cert-btn');
   if(downloadMemoCertBtn) {
      downloadMemoCertBtn.addEventListener('click', () => {
-        const studentName = document.getElementById('cert-student-name').textContent;
+        const studentName = document.getElementById('r-name').textContent;
         const memoPart = document.getElementById('memo-cert-part').textContent;
         window.open(`/certificate.html?type=memo&name=${encodeURIComponent(studentName)}&part=${encodeURIComponent(memoPart)}`, '_blank');
      });
