@@ -76,7 +76,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
 
       // Success
-      showFeedback('تم تسجيل الطالب بنجاح! شكراً لك.', 'success');
+      showFeedback(`بشرى سارة! تم تسجيل الطالب "${data.full_name}" بنجاح.. شكراً لثقتكم.`, 'success');
       form.reset();
       
       // Update count
