@@ -79,10 +79,34 @@ document.addEventListener('DOMContentLoaded', () => {
       studentsGrid.innerHTML = '';
       if(printTableBody) printTableBody.innerHTML = '';
       
+      // Get today's Saudi date to fetch pre-existing evaluations for today
+      function getSaudiDateStr() {
+         const today = new Date();
+         const offset = 3 * 60; 
+         const saudiTime = new Date(today.getTime() + offset * 60 * 1000);
+         return saudiTime.toISOString().split('T')[0];
+      }
+      const saudiToday = getSaudiDateStr();
+      
+      const todayMap = {};
+      (evals || []).forEach(e => {
+         const eDate = e.eval_date || new Date(e.created_at).toISOString().split('T')[0];
+         if (eDate === saudiToday) {
+            todayMap[e.student_id] = e;
+         }
+      });
+      
       let rank = 1;
 
       students.forEach(student => {
         const score = scores[student.id] || 0;
+        const currentEval = todayMap[student.id] || {};
+        
+        const att = currentEval.attendance_status || 'حاضر';
+        const perf = currentEval.performance || 'ممتاز';
+        const taj = currentEval.tajweed || 'متقن للأحكام';
+        const note = currentEval.notes || '';
+        const memo = currentEval.memorized_part || '';
         
         // 1. Interactive Card
         const card = document.createElement('div');
@@ -101,13 +125,13 @@ document.addEventListener('DOMContentLoaded', () => {
           <div class="eval-card-row">
             <label>حالة التحضير:</label>
             <div class="pill-group">
-              <input type="radio" name="att-${student.id}" id="att-pres-${student.id}" class="pill-radio att-present" value="حاضر" checked>
+              <input type="radio" name="att-${student.id}" id="att-pres-${student.id}" class="pill-radio att-present" value="حاضر" ${att==='حاضر'?'checked':''}>
               <label for="att-pres-${student.id}" class="pill-label">حاضر</label>
               
-              <input type="radio" name="att-${student.id}" id="att-exc-${student.id}" class="pill-radio att-excused" value="مستأذن">
+              <input type="radio" name="att-${student.id}" id="att-exc-${student.id}" class="pill-radio att-excused" value="مستأذن" ${att==='مستأذن'?'checked':''}>
               <label for="att-exc-${student.id}" class="pill-label">مستأذن</label>
               
-              <input type="radio" name="att-${student.id}" id="att-abs-${student.id}" class="pill-radio att-absent" value="غائب">
+              <input type="radio" name="att-${student.id}" id="att-abs-${student.id}" class="pill-radio att-absent" value="غائب" ${att==='غائب'?'checked':''}>
               <label for="att-abs-${student.id}" class="pill-label">غائب</label>
             </div>
           </div>
@@ -115,16 +139,16 @@ document.addEventListener('DOMContentLoaded', () => {
           <div class="eval-card-row">
             <label>مستوى التسميع والحفظ:</label>
             <div class="pill-group">
-              <input type="radio" name="perf-${student.id}" id="perf-exc-${student.id}" class="pill-radio perf-excellent" value="ممتاز" checked>
+              <input type="radio" name="perf-${student.id}" id="perf-exc-${student.id}" class="pill-radio perf-excellent" value="ممتاز" ${perf.includes('ممتاز')?'checked':''}>
               <label for="perf-exc-${student.id}" class="pill-label">ممتاز</label>
               
-              <input type="radio" name="perf-${student.id}" id="perf-vg-${student.id}" class="pill-radio perf-vgood" value="جيد جداً">
+              <input type="radio" name="perf-${student.id}" id="perf-vg-${student.id}" class="pill-radio perf-vgood" value="جيد جداً" ${perf.includes('جيد جداً')?'checked':''}>
               <label for="perf-vg-${student.id}" class="pill-label">جيد جداً</label>
               
-              <input type="radio" name="perf-${student.id}" id="perf-g-${student.id}" class="pill-radio perf-good" value="جيد">
+              <input type="radio" name="perf-${student.id}" id="perf-g-${student.id}" class="pill-radio perf-good" value="جيد" ${(perf==='جيد')?'checked':''}>
               <label for="perf-g-${student.id}" class="pill-label">جيد</label>
               
-              <input type="radio" name="perf-${student.id}" id="perf-w-${student.id}" class="pill-radio perf-weak" value="ضعيف">
+              <input type="radio" name="perf-${student.id}" id="perf-w-${student.id}" class="pill-radio perf-weak" value="ضعيف" ${perf.includes('ضعيف')?'checked':''}>
               <label for="perf-w-${student.id}" class="pill-label">ضعيف</label>
             </div>
           </div>
@@ -132,23 +156,23 @@ document.addEventListener('DOMContentLoaded', () => {
           <div class="eval-card-row">
             <label>مستوى التجويد:</label>
             <div class="pill-group">
-              <input type="radio" name="tajweed-${student.id}" id="taj-exc-${student.id}" class="pill-radio perf-excellent" value="متقن للأحكام" checked>
+              <input type="radio" name="tajweed-${student.id}" id="taj-exc-${student.id}" class="pill-radio perf-excellent" value="متقن للأحكام" ${taj.includes('متقن')?'checked':''}>
               <label for="taj-exc-${student.id}" class="pill-label">متقن للأحكام</label>
               
-              <input type="radio" name="tajweed-${student.id}" id="taj-vg-${student.id}" class="pill-radio perf-vgood" value="يُطبق الأغلب">
+              <input type="radio" name="tajweed-${student.id}" id="taj-vg-${student.id}" class="pill-radio perf-vgood" value="يُطبق الأغلب" ${taj.includes('الأغلب')?'checked':''}>
               <label for="taj-vg-${student.id}" class="pill-label">يُطبق الأغلب</label>
               
-              <input type="radio" name="tajweed-${student.id}" id="taj-g-${student.id}" class="pill-radio perf-good" value="بحاجة لتطوير">
+              <input type="radio" name="tajweed-${student.id}" id="taj-g-${student.id}" class="pill-radio perf-good" value="بحاجة لتطوير" ${taj.includes('تطوير')?'checked':''}>
               <label for="taj-g-${student.id}" class="pill-label">بحاجة لتطوير</label>
               
-              <input type="radio" name="tajweed-${student.id}" id="taj-w-${student.id}" class="pill-radio perf-weak" value="لم يتقن">
+              <input type="radio" name="tajweed-${student.id}" id="taj-w-${student.id}" class="pill-radio perf-weak" value="لم يتقن" ${taj.includes('لم يتقن')?'checked':''}>
               <label for="taj-w-${student.id}" class="pill-label">لم يتقن</label>
             </div>
           </div>
 
           <div class="eval-card-row" style="margin-top: 15px;">
-            <input type="text" class="notes-input" id="memo-${student.id}" placeholder="تحديد المحفوظ المنجز (مثال: سورة الكهف، الجزء 29).." style="margin-bottom: 10px; border-color: var(--color-gold);">
-            <input type="text" class="notes-input" id="note-${student.id}" placeholder="إضافة أي ملاحظات أو توجيهات للطالب..." style="margin-bottom: 15px;">
+            <input type="text" class="notes-input" id="memo-${student.id}" placeholder="تحديد المحفوظ المنجز (مثال: سورة الكهف، الجزء 29).." style="margin-bottom: 10px; border-color: var(--color-gold);" value="${memo}">
+            <input type="text" class="notes-input" id="note-${student.id}" placeholder="إضافة أي ملاحظات أو توجيهات للطالب..." style="margin-bottom: 15px;" value="${note}">
             <button class="save-btn" style="width: 100%; border-radius: 20px;" onclick="window.saveEval('${student.id}')" id="btn-${student.id}">تأكيد الحفظ لليوم وحساب النقاط</button>
           </div>
         `;

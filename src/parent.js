@@ -65,6 +65,8 @@ document.addEventListener('DOMContentLoaded', () => {
       // Show Report
       searchSection.style.display = 'none';
       reportSection.style.display = 'block';
+      document.getElementById('eval-results').style.display = 'block';
+
 
     } catch (err) {
       console.error(err);
