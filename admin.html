@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>إدارة مسابقة القرآن - لوحة الإدارة</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/src/style.css">
+    <style>
+      .admin-card { max-width: 600px; width: 100%; margin: auto; }
+      #login-section { max-width: 400px; margin: auto; }
+      .dashboard-stat {
+        background: rgba(198,162,86,0.1);
+        border: 1px solid var(--color-gold);
+        border-radius: var(--radius-md);
+        padding: 1.5rem;
+        text-align: center;
+        margin-bottom: 2rem;
+      }
+      .dashboard-stat h3 { color: var(--color-primary-dark); font-size: 2rem; margin: 0; }
+      .dashboard-stat p { font-size: 1.2rem; color: #333; margin: 5px 0 0; }
+      .danger-btn {
+        background: #dc2626 !important;
+      }
+      .danger-btn:hover { background: #b91c1c !important; }
+    </style>
+  </head>
+  <body>
+    <div class="app-container admin-card">
+      <div class="registration-card" id="main-content">
+        <header class="card-header">
+          <div class="ministry-logo">
+            <img src="https://www.raed.net/img?id=1531325" alt="شعار وزارة التعليم" width="160" style="margin-bottom: 0.5rem; object-fit: contain;">
+          </div>
+          <h1 class="main-title">لوحة الإدارة <br> <span class="highlight-title">إدارة الدفعات</span></h1>
+        </header>
+
+        <!-- نافذة الدخول -->
+        <div id="login-section" class="form-container">
+          <div class="form-group">
+            <label for="adminPassword">رمز مرور الإدارة</label>
+            <input type="password" id="adminPassword" placeholder="الرمز السري">
+          </div>
+          <button id="login-btn" class="submit-btn" style="background:#4b5563;">دخول للإدارة</button>
+          <div id="login-error" class="feedback-message feedback-error" style="display:none; margin-top: 10px;">رمز غير صحيح</div>
+        </div>
+
+        <!-- لوحة تحكم الإدارة -->
+        <div id="dashboard-section" style="display: none; text-align:center;">
+          <div class="dashboard-stat">
+            <h3>الدفعة الحالية: <span id="current-batch-display" style="color:var(--color-primary);">...</span></h3>
+            <p>حالة التسجيل للدفعة: <span id="registration-status" style="font-weight:bold;">...</span></p>
+          </div>
+
+          <p style="color:#666; margin-bottom: 20px; font-size:1.1rem;">
+            عزيزي المدير، عند الضغط على الزر بالأسفل.. سيتم أرشفت الدفعة الحالية، وتنتقل حلقة التحفيظ لموسم جديد وبرقم دفعة جديد، وسيتم فتح رابط التسجيل تلقائياً لاستقبال أسماء جديدة.
+          </p>
+
+          <button id="end-batch-btn" class="submit-btn danger-btn" style="margin-top: 1rem;">
+            🛑 إنهاء الدفعة الحالية وفتح تسجيل جديد
+          </button>
+        </div>
+
+      </div>
+      <div class="decorative-pattern top-left"></div>
+      <div class="decorative-pattern bottom-right"></div>
+    </div>
+    <script type="module" src="/src/admin.js"></script>
+  </body>
+</html>

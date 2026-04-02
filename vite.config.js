@@ -7,7 +7,8 @@ export default defineConfig({
       input: {
         main: resolve(__dirname, 'index.html'),
         teacher: resolve(__dirname, 'teacher.html'),
-        parent: resolve(__dirname, 'parent.html')
+        parent: resolve(__dirname, 'parent.html'),
+        admin: resolve(__dirname, 'admin.html')
       }
     }
   }

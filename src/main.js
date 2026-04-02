@@ -63,9 +63,10 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
 
       // Insert data
+      const currentBatch = parseInt(form.dataset.batch) || 1;
       const { error } = await supabase
         .from('registrations')
-        .insert([data]);
+        .insert([{ ...data, batch_number: currentBatch }]);
 
       if (error) {
         if (error.code === '23505') {
@@ -101,20 +102,29 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Check how many students are registered
   async function checkRegistrationStatus(initialLoad = true) {
-    // In production with RLS, you might call a special RPC function:
-    // const { data, error } = await supabase.rpc('get_registration_count')
-    
-    // For simple implementation without RPC:
-    const { count, error } = await supabase
-      .from('registrations')
-      .select('*', { count: 'exact', head: true });
+    try {
+      // Fetch Custom Settings (Batch & Status)
+      const { data: settingsData, error: settingsErr } = await supabase.from('settings').select('*').single();
+      const currentBatch = settingsData ? settingsData.current_batch : 1;
+      const forceOpen = settingsData ? settingsData.is_registration_open : true;
+      
+      form.dataset.batch = currentBatch;
 
-    if (error) {
-      // If we haven't configured supabase yet, we mock for demo purposes if URL is dummy
-      if(supabaseUrl === 'YOUR_SUPABASE_URL') {
-         console.warn("Using dummy Supabase config! Mocking response.");
-         return handleStatusUpdate(0, initialLoad); // Mock 0 registrations
+      if (!forceOpen) {
+        showLimitReached();
+        return true;
       }
+
+      const { count, error } = await supabase
+        .from('registrations')
+        .select('*', { count: 'exact', head: true })
+        .eq('batch_number', currentBatch);
+
+      if (error) throw error;
+
+      return handleStatusUpdate(count || 0, initialLoad);
+    } catch (error) {
+      console.error("Error in checkRegistrationStatus:", error);
       throw error;
     }
 

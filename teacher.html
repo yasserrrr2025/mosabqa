@@ -73,7 +73,7 @@
       <div class="registration-card" id="main-content">
         <header class="card-header">
           <div class="ministry-logo">
-            <img src="https://h.top4top.io/p_3744p7ah61.png" alt="شعار وزارة التعليم" width="160" style="margin-bottom: 0.5rem; object-fit: contain;">
+            <img src="https://www.raed.net/img?id=1531325" alt="شعار وزارة التعليم" width="160" style="margin-bottom: 0.5rem; object-fit: contain;">
           </div>
           <h1 class="main-title">بوابة المعلم <br> <span class="highlight-title">اللقاء اليومي</span></h1>
           <p class="subtitle" id="current-date-display">تاريخ اليوم</p>
@@ -94,18 +94,21 @@
           
           <!-- Header only for print -->
           <div id="printable-header">
-            <img src="https://h.top4top.io/p_3744p7ah61.png" alt="وزارة التعليم">
+            <img src="https://www.raed.net/img?id=1531325" alt="وزارة التعليم">
             <p style="margin: 0; font-weight: bold;">المملكة العربية السعودية - وزارة التعليم</p>
             <p style="margin: 0; font-weight: bold;">مدرسة عماد الدين زنكي المتوسطة</p>
-            <h2 style="margin-top: 15px;">تقرير الإنجاز لحلقة تحفيظ القرآن الكريم</h2>
+            <h2 id="print-maintitle" style="margin-top: 15px;">تقرير الإنجاز لحلقة تحفيظ القرآن الكريم</h2>
             <p>الدفعة رقم: <span id="print-batch-number"></span> | تاريخ التقرير: <span id="print-date"></span></p>
           </div>
 
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 10px;">
             <div class="status-badge" style="margin: 0; font-weight: bold;">
               <span>الدفعة الحالية: <span id="batch-number-badge">...</span></span>
             </div>
-            <button onclick="window.print()" class="submit-btn" style="width: auto; padding: 0.5rem 1rem; margin: 0; background: var(--color-primary-dark); box-shadow: none;">🖨️ طباعة التقرير</button>
+            <div>
+              <button onclick="window.preparePrint('daily')" class="submit-btn" style="width: auto; padding: 0.5rem 1rem; margin: 0; margin-left: 5px; background: #6b7280; box-shadow: none;">📝 طباعة تحضير فارغ</button>
+              <button onclick="window.preparePrint('final')" class="submit-btn" style="width: auto; padding: 0.5rem 1rem; margin: 0; background: var(--color-primary-dark); box-shadow: none;">🏆 تقرير ختامي مقيَّم</button>
+            </div>
           </div>
 
           <div style="overflow-x: auto;" class="print-text">
@@ -113,9 +116,9 @@
               <thead>
                 <tr>
                   <th width="30%">اسم الطالب</th>
-                  <th width="20%">التحضير</th>
-                  <th width="20%">مستوى التسميع</th>
-                  <th width="30%">ملاحظات وإنجاز</th>
+                  <th width="20%">التحضير والتسميع</th>
+                  <th width="20%">مستوى التجويد</th>
+                  <th width="30%" id="print-notes-col">ملاحظات وإنجاز</th>
                 </tr>
               </thead>
               <tbody id="print-table-body">

@@ -64,6 +64,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const scoreB = scores[b.id] || 0;
         return scoreB - scoreA;
       });
+      
+      window.currentStudents = students;
+      window.currentScores = scores;
 
       if (!students || students.length === 0) {
         document.getElementById('students-grid').innerHTML = '<div style="grid-column: 1/-1; text-align:center; padding: 2rem;">لا يوجد طلاب مسجلون في هذه الدفعة بعد.</div>';
@@ -121,6 +124,23 @@ document.addEventListener('DOMContentLoaded', () => {
               <label for="perf-w-${student.id}" class="pill-label">ضعيف</label>
             </div>
           </div>
+          
+          <div class="eval-card-row">
+            <label>مستوى التجويد:</label>
+            <div class="pill-group">
+              <input type="radio" name="tajweed-${student.id}" id="taj-exc-${student.id}" class="pill-radio perf-excellent" value="متقن للأحكام" checked>
+              <label for="taj-exc-${student.id}" class="pill-label">متقن للأحكام</label>
+              
+              <input type="radio" name="tajweed-${student.id}" id="taj-vg-${student.id}" class="pill-radio perf-vgood" value="يُطبق الأغلب">
+              <label for="taj-vg-${student.id}" class="pill-label">يُطبق الأغلب</label>
+              
+              <input type="radio" name="tajweed-${student.id}" id="taj-g-${student.id}" class="pill-radio perf-good" value="بحاجة لتطوير">
+              <label for="taj-g-${student.id}" class="pill-label">بحاجة لتطوير</label>
+              
+              <input type="radio" name="tajweed-${student.id}" id="taj-w-${student.id}" class="pill-radio perf-weak" value="لم يتقن">
+              <label for="taj-w-${student.id}" class="pill-label">لم يتقن</label>
+            </div>
+          </div>
 
           <div class="eval-card-row" style="margin-top: 15px;">
             <input type="text" class="notes-input" id="note-${student.id}" placeholder="اكتب ملاحظاتك على الإنجاز..." style="margin-bottom: 15px;">
@@ -128,19 +148,6 @@ document.addEventListener('DOMContentLoaded', () => {
           </div>
         `;
         studentsGrid.appendChild(card);
-
-        // 2. Print Row (Static for the print layout)
-        if(printTableBody) {
-          const tr = document.createElement('tr');
-          tr.innerHTML = `
-            <td><strong>${rank}- ${student.full_name}</strong></td>
-            <td>....................</td>
-            <td>....................</td>
-            <td>........................................</td>
-          `;
-          printTableBody.appendChild(tr);
-        }
-
         rank++;
       });
 
@@ -158,15 +165,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const attendanceEl = document.querySelector(`input[name="att-${studentId}"]:checked`);
     const performanceEl = document.querySelector(`input[name="perf-${studentId}"]:checked`);
+    const tajweedEl = document.querySelector(`input[name="tajweed-${studentId}"]:checked`);
     
     const attendance = attendanceEl ? attendanceEl.value : 'حاضر';
     const performance = performanceEl ? performanceEl.value : 'ممتاز';
+    const tajweedVal = tajweedEl ? tajweedEl.value : 'متقن للأحكام';
     const note = document.getElementById(`note-${studentId}`).value;
 
     const payload = {
       student_id: studentId,
       attendance_status: attendance,
       performance: performance,
+      tajweed: tajweedVal,
       notes: note
     };
 
@@ -192,5 +202,54 @@ document.addEventListener('DOMContentLoaded', () => {
       btn.disabled = false;
       btn.textContent = 'حفظ';
     }
+  };
+
+  window.preparePrint = function(type) {
+    const titleEl = document.getElementById('print-maintitle');
+    const notesCol = document.getElementById('print-notes-col');
+    const printTableBody = document.getElementById('print-table-body');
+    
+    if(!window.currentStudents || !printTableBody) return;
+    printTableBody.innerHTML = '';
+    
+    let rank = 1;
+    if(type === 'daily') {
+      titleEl.textContent = 'كشف الحضور والتحضير اليومي للحلقة';
+      notesCol.textContent = 'ملاحظات المعلم';
+      
+      window.currentStudents.forEach(student => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><strong>${rank}- ${student.full_name}</strong></td>
+          <td>....................</td>
+          <td>....................</td>
+          <td>........................................</td>
+        `;
+        printTableBody.appendChild(tr);
+        rank++;
+      });
+    } else {
+      titleEl.textContent = 'التقرير الختامي المقيَّم والمجمَّع لطلاب الحلقة';
+      notesCol.textContent = 'مجموع النقاط والتقييم';
+      
+      window.currentStudents.forEach(student => {
+        const score = window.currentScores[student.id] || 0;
+        let finalEval = 'جيد';
+        if(score > 60) finalEval = 'ممتاز ومتقن';
+        else if(score > 30) finalEval = 'جيد جداً وثابت';
+        
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><strong>${rank}- ${student.full_name}</strong></td>
+          <td style="text-align:center;">${finalEval}</td>
+          <td style="text-align:center; font-weight:bold;">مُقيَّم</td>
+          <td style="text-align:center; color: var(--color-gold-dark); font-weight:bold;">${score} نقطة</td>
+        `;
+        printTableBody.appendChild(tr);
+        rank++;
+      });
+    }
+    
+    setTimeout(() => { window.print(); }, 200);
   };
 });

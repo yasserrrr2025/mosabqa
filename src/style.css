@@ -386,7 +386,7 @@ select {
     box-shadow: none !important;
     padding: 0 !important;
   }
-  #login-section, .submit-btn, .action-select, .notes-input, .save-btn, button, .status-badge, .decorative-pattern, .ministry-logo, .main-title, .subtitle {
+  #login-section, .submit-btn, .action-select, .notes-input, .save-btn, button, .status-badge, .decorative-pattern, .ministry-logo, .main-title, .subtitle, #students-grid, .students-grid {
     display: none !important;
   }
   
