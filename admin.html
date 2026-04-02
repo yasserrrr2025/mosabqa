@@ -8,7 +8,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/src/style.css">
     <style>
-      .admin-card { max-width: 600px; width: 100%; margin: auto; }
+      .admin-card { max-width: 1100px; width: 100%; margin: auto; }
       #login-section { max-width: 400px; margin: auto; }
       .dashboard-stat {
         background: rgba(198,162,86,0.1);
@@ -47,19 +47,72 @@
         </div>
 
         <!-- لوحة تحكم الإدارة -->
-        <div id="dashboard-section" style="display: none; text-align:center;">
-          <div class="dashboard-stat">
-            <h3>الدفعة الحالية: <span id="current-batch-display" style="color:var(--color-primary);">...</span></h3>
-            <p>حالة التسجيل للدفعة: <span id="registration-status" style="font-weight:bold;">...</span></p>
+        <div id="dashboard-section" style="display: none;">
+          
+          <!-- Header only for print -->
+          <div id="printable-header">
+            <img src="https://www.raed.net/img?id=1531325" alt="وزارة التعليم">
+            <p style="margin: 0; font-weight: bold;">المملكة العربية السعودية - وزارة التعليم</p>
+            <p style="margin: 0; font-weight: bold;">مدرسة عماد الدين زنكي المتوسطة</p>
+            <h2 style="margin-top: 15px;">السجل الشامل لخريجي حلقة تحفيظ القرآن الكريم</h2>
+            <p>تاريخ استخراج السجل: <span id="admin-print-date"></span></p>
           </div>
 
-          <p style="color:#666; margin-bottom: 20px; font-size:1.1rem;">
-            عزيزي المدير، عند الضغط على الزر بالأسفل.. سيتم أرشفت الدفعة الحالية، وتنتقل حلقة التحفيظ لموسم جديد وبرقم دفعة جديد، وسيتم فتح رابط التسجيل تلقائياً لاستقبال أسماء جديدة.
-          </p>
+          <div style="display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 20px;">
+            <div class="dashboard-stat" style="flex:1; margin-bottom:0; padding:1rem;">
+              <h3 id="stat-total-students">...</h3>
+              <p>إجمالي المسجلين (التاريخي)</p>
+            </div>
+            <div class="dashboard-stat" style="flex:1; margin-bottom:0; padding:1rem; border-color:var(--color-primary);">
+              <h3 id="current-batch-display" style="color:var(--color-primary);">...</h3>
+              <p>الدفعة الحالية النشطة</p>
+            </div>
+            <div class="dashboard-stat" style="flex:1; margin-bottom:0; padding:1rem;">
+              <h3 id="registration-status" style="color: green; font-size: 1.5rem;">...</h3>
+              <p>حالة بوابة التسجيل</p>
+            </div>
+          </div>
 
-          <button id="end-batch-btn" class="submit-btn danger-btn" style="margin-top: 1rem;">
-            🛑 إنهاء الدفعة الحالية وفتح تسجيل جديد
-          </button>
+          <!-- Controls Section -->
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 10px; background: #fafafa; padding: 15px; border-radius: 10px; border: 1px solid #e5e7eb;">
+             <div style="display:flex; gap:10px; align-items:center;">
+               <label style="font-weight:bold; color:var(--color-primary-dark);">استعراض وجرد:</label>
+               <select id="batch-filter" class="action-select" style="font-size: 1rem; min-width: 180px;">
+                 <option value="all">الكل (إظهار الأرشيف كاملاً)</option>
+                 <!-- Injected dynamically -->
+               </select>
+             </div>
+             
+             <div style="display:flex; gap: 10px; flex-wrap: wrap;">
+                <button onclick="window.print()" class="submit-btn" style="width: auto; padding: 0.5rem 1rem; margin: 0; background: #6b7280; box-shadow: none;">🖨️ طباعة وتوثيق السجل المبين</button>
+                <button id="end-batch-btn" class="submit-btn danger-btn" style="width: auto; padding: 0.5rem 1rem; margin: 0;">🛑 أرشفة الدفعة الحالية وفتح تسجيل جديد</button>
+             </div>
+          </div>
+
+          <!-- Archive Table -->
+          <div style="overflow-x: auto;" class="print-text">
+            <table class="students-table print-table">
+              <thead>
+                <tr>
+                  <th width="30%">استعلامات الطالب الأساسية</th>
+                  <th width="15%">الهوية الوطنية</th>
+                  <th width="15%">رقم الجوال الخاص</th>
+                  <th width="10%">رقم الدفعة</th>
+                  <th width="30%">التقييم الشامل للجهد والنقاط</th>
+                </tr>
+              </thead>
+              <tbody id="admin-table-body">
+                <!-- Data injected via JS -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Print Signatures -->
+          <div class="print-only-signature">
+            <div style="text-align: center;">معلم الحلقة:<br><br>فهد علي آل رده</div>
+            <div style="text-align: center;">مدير المدرسة:<br><br>عابد عبيد الجدعاني</div>
+          </div>
+
         </div>
 
       </div>
