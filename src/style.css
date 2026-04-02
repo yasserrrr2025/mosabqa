@@ -365,6 +365,67 @@ select {
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* Print Styles */
+.print-text { display: none; }
+#printable-header { display: none; }
+.print-only-signature { display: none; }
+
+@media print {
+  body {
+    background: none !important;
+  }
+  .app-container {
+    max-width: 100% !important;
+    box-shadow: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    animation: none !important;
+  }
+  .registration-card {
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+  }
+  #login-section, .submit-btn, .action-select, .notes-input, .save-btn, button, .status-badge, .decorative-pattern, .ministry-logo, .main-title, .subtitle {
+    display: none !important;
+  }
+  
+  #printable-header {
+    display: block !important;
+    text-align: center;
+    border-bottom: 2px solid var(--color-primary-dark);
+    margin-bottom: 20px;
+    padding-bottom: 20px;
+  }
+  #printable-header img {
+    width: 150px;
+    margin-bottom: 10px;
+  }
+  #printable-header h2 {
+    font-family: 'Amiri', serif;
+    color: #000;
+  }
+
+  .print-text { display: block !important; font-weight: 600; }
+  .students-table th {
+    background-color: #e5e5e5 !important;
+    color: #000 !important;
+    border: 1px solid #aaa !important;
+  }
+  .students-table td {
+    border: 1px solid #aaa !important;
+    padding: 0.5rem !important;
+  }
+
+  .print-only-signature {
+    display: flex !important;
+    justify-content: space-between;
+    margin-top: 50px;
+    padding: 0 50px;
+    font-weight: bold;
+  }
+}
+
 /* Decorative elements */
 .decorative-pattern {
   position: absolute;

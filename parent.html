@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>بوابة ولي الأمر - حلقة أجيال القرآن</title>
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/src/style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+      .evaluation-card {
+        background: #fafafa;
+        border: 1px solid #e5e7eb;
+        border-radius: var(--radius-md);
+        padding: 1rem;
+        margin-bottom: 1rem;
+        border-right: 4px solid var(--color-primary);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+      .eval-date {
+        font-weight: bold;
+        color: var(--color-primary-dark);
+        font-family: 'Amiri', serif;
+        font-size: 1.1rem;
+      }
+      .eval-badge {
+        padding: 0.3rem 0.8rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: bold;
+      }
+      .badge-excellent { background: #dcfce7; color: #16a34a; }
+      .badge-good { background: #dbeafe; color: #2563eb; }
+      .badge-weak { background: #fee2e2; color: #dc2626; }
+      .eval-notes {
+        width: 100%;
+        color: var(--color-text-muted);
+        font-size: 0.95rem;
+        margin-top: 0.5rem;
+      }
+      .student-info-header {
+        background: rgba(198,162,86,0.1);
+        padding: 1rem;
+        border-radius: var(--radius-lg);
+        margin-bottom: 2rem;
+        border: 1px solid rgba(198,162,86,0.3);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app-container">
+      <div class="registration-card" id="main-content">
+        <header class="card-header">
+          <div class="ministry-logo">
+            <img src="https://h.top4top.io/p_3744p7ah61.png" alt="شعار وزارة التعليم" width="160" style="margin-bottom: 0.5rem; object-fit: contain;">
+          </div>
+          <h1 class="main-title">بوابة <br> <span class="highlight-title">استعلام ولي الأمر</span></h1>
+          <p class="subtitle">متابعة إنجازات الطالب اليومية</p>
+        </header>
+
+        <!-- Search Form -->
+        <div id="search-section" class="form-container">
+          <p style="text-align: center; margin-bottom: 20px; color: var(--color-text-muted);">أدخل رقم الهوية أو الإقامة للطالب للاطلاع على تقارير الحفظ والتحضير الصادرة من المعلم المباشر.</p>
+          <div class="form-group">
+            <label for="studentId">رقم الهوية <span class="required">*</span></label>
+            <input type="text" id="studentId" placeholder="10 أرقام" inputmode="numeric" maxlength="10">
+          </div>
+          <button id="search-btn" class="submit-btn">
+            استعلام وعرض التقرير
+          </button>
+          <div id="search-error" class="feedback-message feedback-error" style="display:none; margin-top: 10px;"></div>
+        </div>
+
+        <!-- Report Section -->
+        <div id="report-section" style="display: none;">
+          <button onclick="location.reload()" style="background: none; border: none; color: var(--color-primary); cursor: pointer; margin-bottom: 15px; font-weight: bold; font-size: 1rem;">← عودة للبحث المستمر</button>
+          
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; gap: 1rem; flex-wrap: wrap;">
+            <div class="student-info-header" style="flex: 1; margin-bottom: 0;">
+              <h3 style="color: var(--color-primary-dark); margin-bottom: 5px;">الطالب: <span id="r-name" style="color: var(--color-gold-dark);"></span></h3>
+              <p style="font-size: 0.95rem;">الصف: <span id="r-grade" style="font-weight:bold;"></span> - الفصل: <span id="r-class" style="font-weight:bold;"></span></p>
+            </div>
+            <button id="download-cert-btn" class="submit-btn" style="width: auto; background: var(--color-gold); padding: 0.8rem 1rem; box-shadow:none;">📜 تحميل شهادة إنجاز مصورة</button>
+          </div>
+
+          <h2 style="font-size: 1.3rem; margin-bottom: 1rem; color: var(--color-primary-dark); font-family: 'Amiri', serif;">أحدث التقييمات المسجلة:</h2>
+          
+          <div id="evaluations-list">
+            <!-- Injected by JS -->
+          </div>
+        </div>
+
+      </div>
+      
+      <!-- شهادة الشكر الخفية (تستخدم فقط للتصوير لولي الأمر) -->
+      <div id="certificate-template" style="position: absolute; top: -9999px; left: -9999px; width: 800px; height: 600px; background: #fffcf5; padding: 40px; border: 15px solid var(--color-primary); box-sizing: border-box; text-align: center; font-family: 'Amiri', serif; direction: rtl;">
+        <div style="border: 2px solid var(--color-gold); height: 100%; padding: 30px; position: relative;">
+            <!-- Decorative Corners -->
+            <div style="position: absolute; top: 10px; left: 10px; width: 50px; height: 50px; border-top: 4px solid var(--color-gold); border-left: 4px solid var(--color-gold);"></div>
+            <div style="position: absolute; top: 10px; right: 10px; width: 50px; height: 50px; border-top: 4px solid var(--color-gold); border-right: 4px solid var(--color-gold);"></div>
+            <div style="position: absolute; bottom: 10px; left: 10px; width: 50px; height: 50px; border-bottom: 4px solid var(--color-gold); border-left: 4px solid var(--color-gold);"></div>
+            <div style="position: absolute; bottom: 10px; right: 10px; width: 50px; height: 50px; border-bottom: 4px solid var(--color-gold); border-right: 4px solid var(--color-gold);"></div>
+
+            <img src="https://h.top4top.io/p_3744p7ah61.png" width="120" style="margin-bottom: 20px;">
+            <h1 style="color: var(--color-primary-dark); font-size: 2.8rem; margin-bottom: 5px; line-height: 1;">شَهَادَةُ شُكْرٍ وَتَقْدِير</h1>
+            <h2 style="color: var(--color-gold-dark); font-size: 1.5rem; margin-bottom: 30px;">حلقة تحفيظ القرآن الكريم</h2>
+            <p style="font-size: 1.4rem; color: #333; margin-bottom: 0;">بكل فخر واعتزاز، نتقدم بأسمى آيات الشكر والتقدير للطالب المتميز:</p>
+            <h2 id="cert-student-name" style="font-size: 2.2rem; color: var(--color-primary); margin: 15px 0;">اسم الطالب</h2>
+            <p style="font-size: 1.3rem; color: #333;">نظير تفوقه واجتهاده في الحفظ والمراجعة، حيث حصد <span id="cert-student-score" style="font-weight:bold; color:var(--color-gold-dark); font-size: 1.5rem;">0</span> نقطة من التميز.<br>سائلين المولى له دوام التوفيق وأن يجعله من أهل القرآن الميمونين.</p>
+            
+            <div style="display: flex; justify-content: space-between; margin-top: 40px; padding: 0 40px; font-family: 'Cairo', sans-serif;">
+              <div><h3 style="color:var(--color-primary-dark); font-size: 1.2rem;">المعلم المباشر</h3><p style="color: #666;">...............</p></div>
+              <div><h3 style="color:var(--color-primary-dark); font-size: 1.2rem;">مدير المدرسة</h3><p style="color: #666;">...............</p></div>
+            </div>
+        </div>
+      </div>
+
+      <div class="decorative-pattern top-left"></div>
+      <div class="decorative-pattern bottom-right"></div>
+    </div>
+    <script type="module" src="/src/parent.js"></script>
+  </body>
+</html>
