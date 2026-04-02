@@ -8,7 +8,8 @@ export default defineConfig({
         main: resolve(__dirname, 'index.html'),
         teacher: resolve(__dirname, 'teacher.html'),
         parent: resolve(__dirname, 'parent.html'),
-        admin: resolve(__dirname, 'admin.html')
+        admin: resolve(__dirname, 'admin.html'),
+        certificate: resolve(__dirname, 'certificate.html')
       }
     }
   }

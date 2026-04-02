@@ -131,74 +131,21 @@ document.addEventListener('DOMContentLoaded', () => {
     errorMsg.style.display = 'block';
   }
 
-  // Handle Modal visibility for Original Cert
-  downloadCertBtn.addEventListener('click', () => {
-    document.getElementById('cert-modal').style.display = 'flex';
-  });
-  
-  document.getElementById('close-cert-modal').addEventListener('click', () => {
-    document.getElementById('cert-modal').style.display = 'none';
-  });
-
-  // Handle Modal visibility for Memo Cert
-  const downloadMemoCertBtn = document.getElementById('download-memo-cert-btn');
-  if(downloadMemoCertBtn) {
-    downloadMemoCertBtn.addEventListener('click', () => {
-       document.getElementById('memo-cert-modal').style.display = 'flex';
-    });
-  }
-  const closeMemoModalBtn = document.getElementById('close-memo-cert-modal');
-  if(closeMemoModalBtn) {
-    closeMemoModalBtn.addEventListener('click', () => {
-       document.getElementById('memo-cert-modal').style.display = 'none';
-    });
-  }
-
   // Handle actual Certificate Download (Participation)
-  const execDownloadBtn = document.getElementById('execute-download-btn');
-  execDownloadBtn.addEventListener('click', async () => {
-     generateAndDownloadImage('certificate-template', 'execute-download-btn', `شهادة_مشاركة_${document.getElementById('cert-student-name').textContent.replace(/ /g, '_')}.png`, 'cert-modal');
-  });
+  if(downloadCertBtn) {
+    downloadCertBtn.addEventListener('click', () => {
+      const studentName = document.getElementById('cert-student-name').textContent;
+      window.open(`/certificate.html?type=part&name=${encodeURIComponent(studentName)}`, '_blank');
+    });
+  }
 
   // Handle actual Certificate Download (Memorization)
-  const execMemoDownloadBtn = document.getElementById('execute-memo-download-btn');
-  if(execMemoDownloadBtn) {
-     execMemoDownloadBtn.addEventListener('click', async () => {
-        generateAndDownloadImage('memo-certificate-template', 'execute-memo-download-btn', `شهادة_إتمام_حفظ_${document.getElementById('cert-student-name').textContent.replace(/ /g, '_')}.png`, 'memo-cert-modal');
+  const downloadMemoCertBtn = document.getElementById('download-memo-cert-btn');
+  if(downloadMemoCertBtn) {
+     downloadMemoCertBtn.addEventListener('click', () => {
+        const studentName = document.getElementById('cert-student-name').textContent;
+        const memoPart = document.getElementById('memo-cert-part').textContent;
+        window.open(`/certificate.html?type=memo&name=${encodeURIComponent(studentName)}&part=${encodeURIComponent(memoPart)}`, '_blank');
      });
-  }
-
-  // Helper function for generation
-  async function generateAndDownloadImage(templateId, btnId, fileName, modalId) {
-    const btn = document.getElementById(btnId);
-    const origText = btn.textContent;
-    btn.textContent = 'جاري التوليد والحفظ...';
-    btn.disabled = true;
-
-    try {
-      const template = document.getElementById(templateId);
-      const canvas = await html2canvas(template, {
-        scale: 2, // High resolution
-        useCORS: true 
-      });
-      
-      const imgData = canvas.toDataURL('image/png');
-      const link = document.createElement('a');
-      link.href = imgData;
-      link.download = fileName;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      
-      // Close modal on success
-      setTimeout(() => { document.getElementById(modalId).style.display = 'none'; }, 500);
-
-    } catch (err) {
-      console.error(err);
-      alert('تعذر استخراج الشهادة تلقائياً. تأكد من متصفحك.');
-    } finally {
-      btn.textContent = origText;
-      btn.disabled = false;
-    }
   }
 });
