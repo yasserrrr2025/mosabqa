@@ -76,6 +76,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function renderEvaluations(evals) {
     const timeline = document.getElementById('timeline-list');
+    const memoContainer = document.getElementById('memo-cert-container');
+    if(memoContainer) memoContainer.style.display = 'none'; // Reset state between searches
+    
     const oldTitle = document.querySelector('h2');
     if(oldTitle && oldTitle.textContent.includes('أحدث التقييمات')) oldTitle.style.display = 'none';
 
@@ -117,8 +120,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const latest = evals[0];
     if(latest.performance && latest.performance.includes('ممتاز') && latest.memorized_part && latest.memorized_part.trim().length > 0) {
-       document.getElementById('memo-cert-container').style.display = 'block';
-       document.getElementById('memo-cert-part').textContent = latest.memorized_part;
+       if(memoContainer) memoContainer.style.display = 'block';
+       const btnObj = document.getElementById('download-memo-cert-btn');
+       if(btnObj) btnObj.setAttribute('data-part', latest.memorized_part);
     }
   }
 
@@ -140,7 +144,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if(downloadMemoCertBtn) {
      downloadMemoCertBtn.addEventListener('click', () => {
         const studentName = document.getElementById('r-name').textContent;
-        const memoPart = document.getElementById('memo-cert-part').textContent;
+        const memoPart = downloadMemoCertBtn.getAttribute('data-part') || 'المقرر';
         window.open(`/certificate.html?type=memo&name=${encodeURIComponent(studentName)}&part=${encodeURIComponent(memoPart)}`, '_blank');
      });
   }
