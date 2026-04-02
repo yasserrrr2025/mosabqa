@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>لوحة الشرف التفاعلية - أبزر المسابقين</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@700&family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+  
+  <style>
+    /* Dark TV Theme */
+    :root {
+      --primary: #c6a256; /* Gold */
+      --primary-dark: #8b733d;
+      --bg-dark: #0a0f16;
+      --card-bg: rgba(255, 255, 255, 0.05);
+      --text-main: #ffffff;
+      --text-muted: #a0aec0;
+    }
+    
+    body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg-dark);
+      color: var(--text-main);
+      font-family: 'Cairo', sans-serif;
+      overflow-x: hidden;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background-image: radial-gradient(circle at top right, rgba(198, 162, 86, 0.15) 0%, transparent 40%),
+                        radial-gradient(circle at bottom left, rgba(4, 107, 106, 0.2) 0%, transparent 40%);
+    }
+
+    .tv-header {
+      text-align: center;
+      padding: 30px;
+      margin-bottom: 20px;
+      border-bottom: 1px solid rgba(198, 162, 86, 0.2);
+      background: linear-gradient(180deg, rgba(0,0,0,0.6) 0%, transparent 100%);
+    }
+    
+    .tv-title {
+      font-family: 'Amiri', serif;
+      font-size: 4rem;
+      color: var(--primary);
+      margin: 0;
+      text-shadow: 0 0 20px rgba(198, 162, 86, 0.5);
+    }
+    
+    .tv-subtitle {
+      font-size: 1.5rem;
+      color: var(--text-muted);
+      margin-top: 10px;
+    }
+    
+    .top-students-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 30px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .student-card {
+      background: var(--card-bg);
+      border: 1px solid rgba(198, 162, 86, 0.2);
+      border-radius: 20px;
+      padding: 25px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      transform: translateY(50px);
+      opacity: 0;
+      transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+
+    .student-card.visible {
+      transform: translateY(0);
+      opacity: 1;
+    }
+    
+    /* Dynamic styling for top 3 */
+    .student-card.rank-1 {
+      grid-column: 1 / -1;
+      max-width: 700px;
+      margin: 0 auto;
+      transform: scale(1.1) translateY(50px);
+      background: linear-gradient(135deg, rgba(198, 162, 86, 0.2) 0%, rgba(255, 255, 255, 0.05) 100%);
+      border: 2px solid var(--primary);
+      box-shadow: 0 0 40px rgba(198, 162, 86, 0.3);
+    }
+    
+    .student-card.rank-1.visible { transform: scale(1.1) translateY(0); }
+    .student-card.rank-2 { border-left: 5px solid #e2e8f0; } /* Silver */
+    .student-card.rank-3 { border-left: 5px solid #cd7f32; } /* Bronze */
+
+    .rank-badge {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: rgba(198, 162, 86, 0.2);
+      color: var(--primary);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 2rem;
+      font-weight: 900;
+      border: 2px solid var(--primary);
+    }
+    
+    .rank-1 .rank-badge { background: var(--primary); color: #000; font-size: 2.5rem; width: 80px; height: 80px; }
+    .rank-2 .rank-badge { background: #e2e8f0; color: #000; border-color: #fff; }
+    .rank-3 .rank-badge { background: #cd7f32; color: #fff; border-color: #b87333; }
+
+    .student-info { flex: 1; }
+    
+    .student-name {
+      font-size: 1.8rem;
+      font-weight: 700;
+      margin: 0 0 5px 0;
+      color: #fff;
+    }
+    
+    .rank-1 .student-name { font-size: 2.5rem; color: var(--primary); }
+
+    .student-meta {
+      font-size: 1.1rem;
+      color: var(--text-muted);
+    }
+
+    .points-badge {
+      font-size: 2rem;
+      font-weight: 900;
+      color: var(--primary);
+      text-shadow: 0 0 10px rgba(198, 162, 86, 0.5);
+    }
+    
+    .rank-1 .points-badge { font-size: 3rem; }
+
+    /* Moving light reflection effect */
+    .student-card::after {
+      content: '';
+      position: absolute;
+      top: 0; left: -100%;
+      width: 50%; height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+      transform: skewX(-20deg);
+      animation: shine 4s infinite;
+    }
+
+    @keyframes shine {
+      0% { left: -100%; }
+      20% { left: 200%; }
+      100% { left: 200%; }
+    }
+
+    #loading {
+      text-align: center;
+      font-size: 2rem;
+      margin-top: 100px;
+      color: var(--primary);
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 0.5; }
+      50% { opacity: 1; }
+      100% { opacity: 0.5; }
+    }
+
+    .footer-tick {
+      margin-top: auto;
+      text-align: center;
+      padding: 15px;
+      background: rgba(0,0,0,0.5);
+      color: var(--text-muted);
+      border-top: 1px solid rgba(255,255,255,0.1);
+    }
+  </style>
+</head>
+<body>
+
+  <header class="tv-header">
+    <div style="display:flex; justify-content:center; align-items:center; gap: 20px;">
+      <img src="/new-logo.png" width="100" />
+      <div>
+        <h1 class="tv-title">لوحة شرف الأبطال</h1>
+        <p class="tv-subtitle">المنافسة اليومية المباشرة بناءً على التقييمات التراكمية</p>
+      </div>
+    </div>
+  </header>
+
+  <div id="loading">جاري حساب درجات التنافس وقراءة السجلات...</div>
+
+  <main class="top-students-container" id="board-container"></main>
+
+  <footer class="footer-tick">
+    <p>تُحدّث اللوحة تلقائياً. النقاط تعتمد على: ممتاز (3)، جيد جداً (2)، جيد (1). الجوائز لأعلى 3 في نهاية الدفعة!</p>
+  </footer>
+
+  <script type="module" src="/src/leaderboard.js"></script>
+</body>
+</html>
