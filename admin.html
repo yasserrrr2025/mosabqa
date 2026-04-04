@@ -8,91 +8,188 @@
     <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/src/style.css">
     <style>
+      /* ============= Layout ============= */
       .admin-card { max-width: 1100px; width: 100%; margin: auto; }
-      #login-section { max-width: 400px; margin: auto; }
-      .danger-btn {
-        background: #dc2626 !important;
+      #login-section { max-width: 420px; margin: auto; }
+
+      /* ============= Stat Cards ============= */
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
       }
-      .danger-btn:hover { background: #b91c1c !important; }
-      
-      /* Print Optimizations */
+      .dashboard-stat {
+        background: linear-gradient(135deg, rgba(255,255,255,0.97), rgba(255,255,255,0.85));
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(198,162,86,0.3);
+        border-radius: 16px;
+        padding: 18px 16px;
+        text-align: center;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.06);
+        transition: transform 0.3s, box-shadow 0.3s;
+        position: relative;
+        overflow: hidden;
+      }
+      .dashboard-stat::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0; height: 4px;
+        background: linear-gradient(90deg, var(--color-primary), var(--color-gold));
+      }
+      .dashboard-stat:hover { transform: translateY(-5px); box-shadow: 0 14px 28px rgba(4,75,54,0.12); }
+      .dashboard-stat h3 { color: var(--color-primary-dark); font-size: 2rem; margin: 0 0 4px; font-family: 'Amiri', serif; }
+      .dashboard-stat p { font-size: 0.9rem; color: var(--color-text-muted); margin: 0; font-weight: 600; }
+
+      /* Capacity input card */
+      .capacity-card {
+        background: linear-gradient(135deg, rgba(255,255,255,0.97), rgba(255,255,255,0.85));
+        border: 1px solid rgba(198,162,86,0.3);
+        border-radius: 16px;
+        padding: 16px;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.06);
+        position: relative; overflow: hidden;
+      }
+      .capacity-card::before { content:''; position:absolute; top:0; left:0; right:0; height:4px; background: linear-gradient(90deg, var(--color-primary), var(--color-gold)); }
+      .capacity-card label { font-weight: 700; color: var(--color-primary-dark); display: block; margin-bottom: 8px; font-size: 0.9rem; }
+      .capacity-row { display: flex; gap: 8px; align-items: center; }
+      .capacity-row input { width: 90px; padding: 8px; font-size: 1rem; text-align: center; border: 1.5px solid #d1d5db; border-radius: 10px; font-family: inherit; }
+      .capacity-row input:focus { border-color: var(--color-gold); outline: none; }
+      .capacity-row button { padding: 8px 16px; font-size: 0.9rem; }
+
+      /* ============= Controls Bar ============= */
+      .controls-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+        background: #f8fafc;
+        border: 1px solid #e5e7eb;
+        border-radius: 14px;
+        padding: 14px 18px;
+        margin-bottom: 20px;
+      }
+      .controls-bar label { font-weight: 700; color: var(--color-primary-dark); }
+      .action-select {
+        padding: 9px 14px;
+        border: 1.5px solid #d1d5db;
+        border-radius: 10px;
+        background: #fff;
+        font-family: inherit;
+        font-size: 0.95rem;
+        cursor: pointer;
+        min-width: 190px;
+        transition: border-color 0.2s;
+      }
+      .action-select:focus { border-color: var(--color-gold); outline: none; }
+
+      /* ============= Action Buttons ============= */
+      .btn-group { display: flex; gap: 10px; flex-wrap: wrap; }
+      .action-btn {
+        display: flex; align-items: center; gap: 7px;
+        padding: 10px 18px;
+        border: none; border-radius: 12px;
+        font-family: inherit; font-size: 0.92rem; font-weight: 700;
+        cursor: pointer;
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        white-space: nowrap;
+      }
+      .action-btn:hover { transform: translateY(-2px); box-shadow: 0 7px 18px rgba(0,0,0,0.15); }
+      .action-btn:active { transform: translateY(0); }
+      .btn-gray  { background: linear-gradient(135deg, #6b7280, #4b5563); color: #fff; }
+      .btn-red   { background: linear-gradient(135deg, #dc2626, #b91c1c); color: #fff; }
+      .btn-blue  { background: linear-gradient(135deg, #0ea5e9, #0284c7); color: #fff; }
+
+      /* ============= Archive Table ============= */
+      .table-wrapper { overflow-x: auto; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.06); }
+      .students-table {
+        width: 100%; border-collapse: collapse;
+      }
+      .students-table th {
+        background: linear-gradient(135deg, var(--color-primary-dark), var(--color-primary));
+        color: #fff; font-weight: 700;
+        font-family: 'Amiri', serif; font-size: 1rem;
+        padding: 14px 12px; text-align: right;
+        white-space: nowrap;
+        position: sticky; top: 0;
+      }
+      .students-table td {
+        border-bottom: 1px solid #f0f0f0;
+        padding: 11px 12px; text-align: right;
+        font-size: 0.92rem; transition: background 0.2s;
+      }
+      .students-table tbody tr:hover td { background: rgba(198,162,86,0.06); }
+      .students-table tbody tr:nth-child(even) td { background: #fafafa; }
+
+      /* ============= Roster Section ============= */
+      .roster-section {
+        margin-top: 36px;
+        background: #fff;
+        border: 1.5px solid rgba(198,162,86,0.25);
+        border-radius: 18px;
+        padding: 24px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+        position: relative; overflow: hidden;
+      }
+      .roster-section::before { content:''; position:absolute; top:0; left:0; right:0; height:4px; background:linear-gradient(90deg, #0ea5e9, var(--color-gold)); }
+      .roster-title {
+        font-family: 'Amiri', serif;
+        color: var(--color-primary-dark);
+        font-size: 1.3rem;
+        border-bottom: 2px solid var(--color-gold);
+        padding-bottom: 10px;
+        margin-bottom: 18px;
+        display: flex; align-items: center; gap: 10px;
+      }
+      .roster-controls { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 18px; }
+      .roster-controls > div { flex: 1; min-width: 180px; }
+      .roster-controls label { font-weight: 700; color: var(--color-primary-dark); display: block; margin-bottom: 6px; font-size: 0.9rem; }
+      .roster-controls select { width: 100%; }
+
+      /* ============= Analytics Section ============= */
+      .analytics-section {
+        background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 22px;
+      }
+
+      /* ============= Danger Button ============= */
+      .danger-btn { background: linear-gradient(135deg, #dc2626, #b91c1c) !important; }
+      .danger-btn:hover { background: linear-gradient(135deg, #b91c1c, #991b1b) !important; }
+
+      /* ============= Responsive ============= */
+      @media (max-width: 768px) {
+        .stats-grid { grid-template-columns: repeat(2, 1fr); }
+        .controls-bar { padding: 12px; }
+        .action-btn { font-size: 0.85rem; padding: 9px 13px; }
+        .students-table th, .students-table td { padding: 9px 8px; font-size: 0.85rem; }
+      }
+      @media (max-width: 480px) {
+        .stats-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+        .dashboard-stat h3 { font-size: 1.6rem; }
+        .btn-group { justify-content: stretch; }
+        .action-btn { flex: 1; justify-content: center; }
+        .roster-controls { flex-direction: column; }
+      }
+
+      /* ============= Print ============= */
+      #printable-header, .print-only-signature { display: none; }
       @media print {
         @page { margin: 5mm; size: A4 portrait; }
-        body { background: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; margin: 0; padding: 0; }
-        
-        .app-container { box-shadow: none !important; margin: 0 !important; width: 100% !important; max-width: 100% !important; padding: 0 !important; }
-        .registration-card { box-shadow: none !important; border: none !important; padding: 0 !important; margin: 0 !important; }
-        .no-print, .card-header, .dashboard-stat, #dashboard-section > div:not(.print-text):not(#printable-header):not(.print-only-signature) { display: none !important; }
-        
-        #printable-header { display: block !important; margin-bottom: 20px; font-family: 'Amiri', serif; }
-        
-        /* The crucial fix for repeating headers and page breaks */
-        .print-text { overflow: visible !important; display: block !important; margin-top: 15px !important; }
-        
-        /* Table Aesthetics */
-        .print-table {
-          width: 100%;
-          border-collapse: collapse;
-          font-family: 'Cairo', sans-serif;
-        }
-        .print-table thead {
-          display: table-header-group;
-        }
-        .print-table tr {
-          page-break-inside: avoid;
-        }
-        .print-table th, .print-table td {
-          border: 1px solid #a0aec0 !important;
-          padding: 8px 5px !important;
-          font-size: 10pt !important;
-          text-align: center !important;
-          vertical-align: middle !important;
-          color: #111 !important;
-        }
-        .print-table th { 
-          background-color: #f1f5f9 !important; 
-          font-weight: 800 !important; 
-          font-size: 11pt !important;
-        }
-        /* Zebra Striping */
-        .print-table tbody tr:nth-child(even) {
-          background-color: #f8fafc !important;
-        }
-        
-        /* Force page break after every 9 rows to ensure maximum 9 students per page */
-        .print-table tbody tr:nth-child(9n):not(:last-child) {
-          page-break-after: always !important;
-          break-after: page !important;
-        }
-        
-        .print-only-signature {
-          display: flex !important;
-          justify-content: space-between !important;
-          align-items: flex-end !important;
-          margin-top: 40px !important;
-          padding: 0 10px !important;
-          font-family: 'Amiri', serif !important;
-          page-break-inside: avoid;
-        }
-      }
-      /* Roster print mode: show only the roster elements */
-      @media print {
-        body.print-roster .no-print,
-        body.print-roster .card-header,
-        body.print-roster #printable-header,
-        body.print-roster .print-only-signature,
-        body.print-roster .print-text { display: none !important; }
-
-        body.print-roster #roster-printable-header,
-        body.print-roster #roster-print-area,
-        body.print-roster #roster-print-signature { display: block !important; }
-
-        #roster-print-area .print-table thead { display: table-header-group; }
-        #roster-print-area .print-table tr { page-break-inside: avoid; }
-        #roster-print-area .print-table tbody tr:nth-child(9n):not(:last-child) {
-          page-break-after: always !important;
-          break-after: page !important;
-        }
+        body { background: #fff !important; }
+        .app-container, .registration-card { box-shadow: none !important; margin: 0 !important; padding: 0 !important; width: 100% !important; max-width: 100% !important; border: none !important; }
+        .no-print, .card-header, .dashboard-stat, .analytics-section, .controls-bar, .roster-section { display: none !important; }
+        .print-text { display: block !important; overflow: visible !important; }
+        .print-table thead { display: table-header-group; }
+        .print-table tr { page-break-inside: avoid; }
+        .print-table th, .print-table td { border: 1px solid #aaa !important; padding: 8px 5px !important; font-size: 10pt !important; }
+        .print-table th { background: #f1f5f9 !important; }
+        .print-table tbody tr:nth-child(9n):not(:last-child) { page-break-after: always; }
+        .print-only-signature { display: flex !important; justify-content: space-between !important; margin-top: 40px !important; }
       }
     </style>
   </head>
@@ -141,66 +238,59 @@
             </div>
           </div>
 
-          <div class="no-print" style="display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 20px;">
-            <div class="dashboard-stat" style="flex:1; margin-bottom:0; padding:1rem;">
+          <!-- Stats Grid -->
+          <div class="stats-grid no-print">
+            <div class="dashboard-stat">
               <h3 id="stat-total-students">...</h3>
               <p>إجمالي المسجلين (التاريخي)</p>
             </div>
-            <div class="dashboard-stat" style="flex:1; margin-bottom:0; padding:1rem; border-color:var(--color-primary);">
+            <div class="dashboard-stat">
               <h3 id="current-batch-display" style="color:var(--color-primary);">...</h3>
               <p>الدفعة الحالية النشطة</p>
             </div>
-            <div class="dashboard-stat" style="flex:1; margin-bottom:0; padding:1rem;">
-              <h3 id="registration-status" style="color: green; font-size: 1.5rem;">...</h3>
+            <div class="dashboard-stat">
+              <h3 id="registration-status" style="font-size:1.4rem;">...</h3>
               <p>حالة بوابة التسجيل</p>
             </div>
-             <div class="dashboard-stat" style="flex:1; margin-bottom:0; padding:1rem; min-width: 250px; text-align: right;">
-               <label style="font-weight:bold; color:var(--color-primary-dark); display:block; margin-bottom:5px;">سعة الدفعة الاستيعابية:</label>
-               <div style="display:flex; gap:5px;">
-                 <input type="number" id="capacity-input" style="width: 80px; padding: 5px; font-size: 1rem; text-align: center; border: 1px solid #ccc; border-radius: 5px;" value="25">
-                 <button id="update-capacity-btn" class="submit-btn" style="width: auto; padding: 5px 15px; margin: 0; box-shadow: none;">تحديث</button>
-               </div>
-             </div>
+            <div class="capacity-card">
+              <label>سعة الدفعة الاستيعابية:</label>
+              <div class="capacity-row">
+                <input type="number" id="capacity-input" value="25">
+                <button id="update-capacity-btn" class="submit-btn" style="width:auto; padding:8px 16px; margin:0;">تحديث</button>
+              </div>
+            </div>
           </div>
 
           <!-- Analytics & Podium Section -->
-          <div id="analytics-section" class="no-print" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; margin-bottom: 20px;">
-            <div style="display:flex; justify-content: space-between; align-items:center; flex-wrap:wrap; gap: 15px;">
-              
-              <!-- Best Batch Banner -->
-              <div id="best-batch-banner" style="background: linear-gradient(135deg, gold, #f59e0b); color: #fff; padding: 15px 25px; border-radius: 8px; flex: 1; min-width: 280px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-                 <h3 style="margin:0 0 5px 0; font-size: 1.2rem; text-shadow: 1px 1px 2px rgba(0,0,0,0.2);">🏆 الدفعة الأقوى تنافسياً (التاريخية)</h3>
-                 <p style="margin:0; font-size: 1.1rem; font-weight:bold; text-shadow: 1px 1px 2px rgba(0,0,0,0.2);" id="best-batch-name">جاري الحساب...</p>
+          <div id="analytics-section" class="analytics-section no-print">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
+              <div id="best-batch-banner" style="background:linear-gradient(135deg, #f59e0b, #d97706); color:#fff; padding:16px 22px; border-radius:12px; flex:1; min-width:240px; box-shadow:0 6px 16px rgba(245,158,11,0.3);">
+                <h3 style="margin:0 0 6px; font-size:1.1rem;">🏆 الدفعة الأقوى تنافسياً</h3>
+                <p style="margin:0; font-size:1.1rem; font-weight:bold;" id="best-batch-name">جاري الحساب...</p>
               </div>
-
-              <!-- Top 3 Podium (Hall of Fame) -->
-              <div style="flex: 2; min-width: 350px;">
-                <h3 style="margin:0 0 10px 0; color:var(--color-primary-dark); border-bottom: 2px solid var(--color-gold); padding-bottom: 5px;">👑 لوحة الشرف (الأوائل)</h3>
-                <div id="podium-container" style="display: flex; justify-content: space-around; align-items: flex-end; height: 120px; padding-top: 10px;">
-                  <!-- Injected via JS -->
-                </div>
+              <div style="flex:2; min-width:300px;">
+                <h3 style="margin:0 0 10px; color:var(--color-primary-dark); border-bottom:2px solid var(--color-gold); padding-bottom:6px;">👑 لوحة الشرف (الأوائل)</h3>
+                <div id="podium-container" style="display:flex; justify-content:space-around; align-items:flex-end; height:120px;"></div>
               </div>
             </div>
           </div>
 
           <!-- Controls Section -->
-          <div class="no-print" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 10px; background: #fafafa; padding: 15px; border-radius: 10px; border: 1px solid #e5e7eb;">
-             <div style="display:flex; gap:10px; align-items:center;">
-               <label style="font-weight:bold; color:var(--color-primary-dark);">استعراض وجرد:</label>
-               <select id="batch-filter" class="action-select" style="font-size: 1rem; min-width: 180px;">
-                 <option value="all">الكل (إظهار الأرشيف كاملاً)</option>
-                 <!-- Injected dynamically -->
-               </select>
-             </div>
-             
-             <div style="display:flex; gap: 10px; flex-wrap: wrap;">
-                <button onclick="window.printAdminArchive()" class="submit-btn" style="width: auto; padding: 0.5rem 1rem; margin: 0; background: #6b7280; box-shadow: none;">🖨️ طباعة وتوثيق السجل المبين</button>
-                <button id="end-batch-btn" class="submit-btn danger-btn" style="width: auto; padding: 0.5rem 1rem; margin: 0;">🛑 أرشفة الدفعة الحالية وفتح تسجيل جديد</button>
-             </div>
+          <div class="controls-bar no-print">
+            <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+              <label>استعراض وجرد:</label>
+              <select id="batch-filter" class="action-select">
+                <option value="all">الكل (إظهار الأرشيف كاملاً)</option>
+              </select>
+            </div>
+            <div class="btn-group">
+              <button onclick="window.printAdminArchive()" class="action-btn btn-gray">🖨️ طباعة السجل</button>
+              <button id="end-batch-btn" class="action-btn btn-red">🛑 أرشفة الدفعة وفتح تسجيل جديد</button>
+            </div>
           </div>
 
           <!-- Archive Table -->
-          <div style="overflow-x: auto;" class="print-text">
+          <div class="table-wrapper print-text">
             <table class="students-table print-table">
               <thead>
                 <tr>
@@ -225,34 +315,30 @@
           </div>
 
           <!-- ===== ROSTER SECTION: Current Batch ===== -->
-          <div id="roster-section" class="no-print" style="margin-top: 40px; background: #fff; border: 1.5px solid rgba(198,162,86,0.3); border-radius: 16px; padding: 25px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.06);">
-            <h2 style="font-family:'Amiri',serif; color:var(--color-primary-dark); margin-bottom:15px; font-size:1.5rem; border-bottom: 2px solid var(--color-gold); padding-bottom: 8px;">
-              📋 تقرير المشاركين - الدفعة الحالية
-            </h2>
-            <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:20px;">
-              <div style="flex:1; min-width:200px;">
-                <label style="font-weight:bold; color:var(--color-primary-dark); margin-bottom:6px; display:block">فلتر حسب الصف:</label>
-                <select id="roster-grade-filter" class="action-select" style="width:100%; font-size:1rem;">
+          <div id="roster-section" class="roster-section no-print">
+            <div class="roster-title">📋 تقرير المشاركين - الدفعة الحالية</div>
+            <div class="roster-controls">
+              <div>
+                <label>فلتر حسب الصف:</label>
+                <select id="roster-grade-filter" class="action-select">
                   <option value="all">جميع الصفوف</option>
                 </select>
               </div>
-              <div style="display:flex; gap:10px; align-items:flex-end; padding-top:22px;">
-                <button onclick="window.printRoster()" class="submit-btn" style="width:auto; padding:0.6rem 1.4rem; margin:0; background:#0ea5e9; border-radius:10px;">
+              <div style="padding-top:22px;">
+                <button onclick="window.printRoster()" class="action-btn btn-blue">
                   🖨️ طباعة التقرير
                 </button>
               </div>
             </div>
-            <div style="overflow-x:auto;">
+            <div class="table-wrapper">
               <table id="roster-preview-table" class="students-table" style="font-size:0.95rem;">
-                <thead>
-                  <tr>
-                    <th style="width:60%">اسم الطالب</th>
-                    <th style="width:20%">الصف</th>
-                    <th style="width:20%">الفصل</th>
-                  </tr>
-                </thead>
+                <thead><tr>
+                  <th style="width:60%">اسم الطالب</th>
+                  <th style="width:20%">الصف</th>
+                  <th style="width:20%">الفصل</th>
+                </tr></thead>
                 <tbody id="roster-table-body">
-                  <tr><td colspan="3" style="text-align:center; color:#999;">جاري تحميل البيانات...</td></tr>
+                  <tr><td colspan="3" style="text-align:center; color:#999; padding:20px;">جاري تحميل البيانات...</td></tr>
                 </tbody>
               </table>
             </div>
