@@ -406,4 +406,75 @@ document.addEventListener('DOMContentLoaded', () => {
       endBatchBtn.disabled = false;
     }
   });
+
+  window.printAdminArchive = function() {
+    const filterVal = document.getElementById('batch-filter') ? document.getElementById('batch-filter').value : 'all';
+    const filterLabel = filterVal === 'all' ? 'السجل التاريخي الشامل' : ('دفعة ' + filterVal);
+    const today = new Date().toLocaleDateString('ar-SA-u-nu-latn');
+
+    // Get rendered rows from the table body
+    const tbody = document.getElementById('admin-table-body');
+    const rowsHTML = tbody ? tbody.innerHTML : '<tr><td colspan="5">لا بيانات</td></tr>';
+
+    const gFont = 'https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;800&family=Amiri:wght@400;700&display=swap';
+    const css = [
+      '@page { margin: 8mm; size: A4 portrait; }',
+      '* { box-sizing: border-box; margin: 0; padding: 0; }',
+      'body { font-family: Cairo, sans-serif; background: #fff; color: #111; direction: rtl; }',
+      '.header { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 12px; border-bottom: 2px solid #ccc; margin-bottom: 15px; }',
+      '.header-side { font-weight: bold; font-size: 10pt; line-height: 1.8; }',
+      '.header-center { text-align: center; flex-grow: 1; }',
+      '.header-center img { height: 65px; object-fit: contain; }',
+      '.report-title { text-align: center; margin: 10px 0 15px; }',
+      '.report-title h2 { font-size: 15pt; display: inline-block; border-bottom: 2px solid #888; padding-bottom: 6px; }',
+      'table { width: 100%; border-collapse: collapse; }',
+      'thead { display: table-header-group; }',
+      'tr { page-break-inside: avoid; }',
+      'th { background-color: #f1f5f9 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; font-weight: 800; font-size: 10pt; padding: 9px 6px; border: 1px solid #a0aec0; text-align: center; }',
+      'td { padding: 8px 6px; border: 1px solid #a0aec0; font-size: 9.5pt; vertical-align: middle; }',
+      'tbody tr:nth-child(even) { background-color: #f8fafc !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }',
+      'tbody tr:nth-child(9n):not(:last-child) { page-break-after: always; break-after: page; }',
+      '.signature { display: flex; justify-content: space-between; margin-top: 45px; padding: 0 10px; font-size: 11pt; font-weight: bold; page-break-inside: avoid; }',
+      '.signature div { text-align: center; line-height: 4; }'
+    ].join(' ');
+
+    const header = '<div class="header">' +
+      '<div class="header-side" style="text-align:right;">' +
+        'المملكة العربية السعودية<br>' +
+        'وزارة التعليم<br>' +
+        'إدارة التعليم بمحافظة جدة<br>' +
+        'مدرسة عماد الدين زنكي المتوسطة' +
+      '</div>' +
+      '<div class="header-center"><img src="/new-logo.png" alt="logo"></div>' +
+      '<div class="header-side" style="text-align:left;">' +
+        'السجل: ' + filterLabel + '<br>' +
+        'تاريخ الاستخراج: ' + today +
+      '</div>' +
+    '</div>';
+
+    const sig = '<div class="signature">' +
+      '<div>معلم الحلقة<br>فهد علي آل رده</div>' +
+      '<div>الختم الرسمي<br>....................</div>' +
+      '<div>مدير المدرسة<br>عابد عبيد الجدعاني</div>' +
+    '</div>';
+
+    const body = header +
+      '<div class="report-title"><h2>السجل الشامل لخريجي حلقة تحفيظ القرآن الكريم</h2></div>' +
+      '<table><thead><tr>' +
+      '<th style="width:30%;text-align:right;padding-right:8px;">الطالب</th>' +
+      '<th style="width:15%;">الهوية</th>' +
+      '<th style="width:15%;">الجوال</th>' +
+      '<th style="width:10%;">رقم الدفعة</th>' +
+      '<th style="width:30%;">التقييم والنقاط</th>' +
+      '</tr></thead><tbody>' + rowsHTML + '</tbody></table>' + sig;
+
+    const html = '<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><title>السجل الشامل</title>' +
+      '<link href="' + gFont + '" rel="stylesheet">' +
+      '<style>' + css + '</style></head><body>' + body +
+      '<scr' + 'ipt>window.onload=function(){window.print();window.onafterprint=function(){window.close();};};<' + '/script>' +
+      '</body></html>';
+
+    const w = window.open('', '_blank', 'width=900,height=700');
+    w.document.open(); w.document.write(html); w.document.close();
+  };
 });

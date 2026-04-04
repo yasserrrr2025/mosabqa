@@ -272,100 +272,135 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
+  // ======= Shared print utilities =======
+  function _printCSS() {
+    return [
+      '@page { margin: 8mm; size: A4 portrait; }',
+      '* { box-sizing: border-box; margin: 0; padding: 0; }',
+      "body { font-family: Cairo, sans-serif; background: #fff; color: #111; direction: rtl; }",
+      '.header { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 12px; border-bottom: 2px solid #ccc; margin-bottom: 15px; }',
+      '.header-side { font-weight: bold; font-size: 10pt; line-height: 1.8; }',
+      '.header-center { text-align: center; flex-grow: 1; }',
+      '.header-center img { height: 65px; object-fit: contain; }',
+      '.report-title { text-align: center; margin: 10px 0 15px; }',
+      '.report-title h2 { font-size: 16pt; display: inline-block; border-bottom: 2px solid #888; padding-bottom: 6px; }',
+      'table { width: 100%; border-collapse: collapse; }',
+      'thead { display: table-header-group; }',
+      'tr { page-break-inside: avoid; }',
+      'th { background-color: #f1f5f9 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; font-weight: 800; font-size: 11pt; padding: 10px 8px; border: 1px solid #a0aec0; text-align: center; }',
+      'td { padding: 9px 8px; border: 1px solid #a0aec0; font-size: 10pt; text-align: center; vertical-align: middle; }',
+      'td.name-cell { text-align: right; }',
+      'tbody tr:nth-child(even) { background-color: #f8fafc !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }',
+      'tbody tr:nth-child(9n):not(:last-child) { page-break-after: always; break-after: page; }',
+      '.signature { display: flex; justify-content: space-between; margin-top: 45px; padding: 0 10px; font-size: 11pt; font-weight: bold; page-break-inside: avoid; }',
+      '.signature div { text-align: center; line-height: 4; }'
+    ].join(' ');
+  }
+
+  function _printHeader(batchNum, dateStr) {
+    return '<div class="header">' +
+      '<div class="header-side" style="text-align:right;">' +
+        'المملكة العربية السعودية<br>' +
+        'وزارة التعليم<br>' +
+        'إدارة التعليم بمحافظة جدة<br>' +
+        'مدرسة عماد الدين زنكي المتوسطة' +
+      '</div>' +
+      '<div class="header-center"><img src="/new-logo.png" alt="logo"></div>' +
+      '<div class="header-side" style="text-align:left;">' +
+        'رقم الدفعة: ' + batchNum + '<br>' +
+        'تاريخ التقرير: ' + dateStr +
+      '</div>' +
+    '</div>';
+  }
+
+  function _printSignature() {
+    return '<div class="signature">' +
+      '<div>المعلم<br>فهد علي آل رده</div>' +
+      '<div>الختم الرسمي<br>....................</div>' +
+      '<div>مدير المدرسة<br>عابد عبيد الجدعاني</div>' +
+    '</div>';
+  }
+
+  function _openPrintWin(titleText, bodyContent) {
+    const gFont = 'https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;800&family=Amiri:wght@400;700&display=swap';
+    const html = '<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><title>' + titleText + '</title>' +
+      '<link href="' + gFont + '" rel="stylesheet">' +
+      '<style>' + _printCSS() + '</style></head><body>' + bodyContent +
+      '<scr' + 'ipt>window.onload=function(){window.print();window.onafterprint=function(){window.close();};};<' + '/script>' +
+      '</body></html>';
+    const w = window.open('', '_blank', 'width=900,height=700');
+    w.document.open(); w.document.write(html); w.document.close();
+  }
+
   window.preparePrint = function(type) {
-    const titleEl = document.getElementById('print-maintitle');
-    const notesCol = document.getElementById('print-notes-col');
-    const printTableBody = document.getElementById('print-table-body');
-    const thead = document.getElementById('print-table-head');
-    
-    if(!window.currentStudents || !printTableBody) return;
-    printTableBody.innerHTML = '';
-    
-    let rank = 1;
+    if (!window.currentStudents || window.currentStudents.length === 0) return alert('لا يوجد طلاب للطباعة.');
+    const bEl = document.getElementById('batch-number-badge');
+    const batchNum = bEl ? bEl.textContent : '';
+    const today = new Date().toLocaleDateString('ar-SA-u-nu-latn');
 
-    // Default Headers (for daily and final)
-    if (type !== 'roster') {
-      thead.innerHTML = `
-        <tr>
-          <th width="30%">اسم الطالب</th>
-          <th width="20%">التحضير والتسميع</th>
-          <th width="20%">مستوى التجويد</th>
-          <th width="30%">ملاحظات وإنجاز</th>
-        </tr>
-      `;
+    if (type === 'daily') {
+      let rows = '';
+      window.currentStudents.forEach(function(s, i) {
+        rows += '<tr><td class="name-cell"><strong>' + (i+1) + '- ' + s.full_name + '</strong></td>' +
+          '<td>....................</td><td>....................</td><td>................................</td></tr>';
+      });
+      _openPrintWin('كشف الحضور اليومي',
+        _printHeader(batchNum, today) +
+        '<div class="report-title"><h2>كشف الحضور والتحضير اليومي للحلقة</h2></div>' +
+        '<table><thead><tr>' +
+        '<th style="width:30%;text-align:right;padding-right:10px;">اسم الطالب</th>' +
+        '<th style="width:20%;">التحضير والتسميع</th>' +
+        '<th style="width:20%;">مستوى التجويد</th>' +
+        '<th style="width:30%;">ملاحظات وإنجاز</th>' +
+        '</tr></thead><tbody>' + rows + '</tbody></table>' + _printSignature()
+      );
+
+    } else if (type === 'final') {
+      let rows = '';
+      window.currentStudents.forEach(function(s, i) {
+        const score = (window.currentScores || {})[s.id] || 0;
+        let ev = 'جيد';
+        if (score > 60) ev = 'ممتاز ومتقن';
+        else if (score > 30) ev = 'جيد جداً وثابت';
+        rows += '<tr><td class="name-cell"><strong>' + (i+1) + '- ' + s.full_name + '</strong></td>' +
+          '<td>' + ev + '</td><td>مُقيَّم</td><td><strong>' + score + ' نقطة</strong></td></tr>';
+      });
+      _openPrintWin('التقرير الختامي',
+        _printHeader(batchNum, today) +
+        '<div class="report-title"><h2>التقرير الختامي المقيَّم والمجمَّع لطلاب الحلقة</h2></div>' +
+        '<table><thead><tr>' +
+        '<th style="width:30%;text-align:right;padding-right:10px;">اسم الطالب</th>' +
+        '<th style="width:25%;">التقييم العام</th>' +
+        '<th style="width:15%;">الحالة</th>' +
+        '<th style="width:30%;">مجموع النقاط</th>' +
+        '</tr></thead><tbody>' + rows + '</tbody></table>' + _printSignature()
+      );
+
+    } else if (type === 'roster') {
+      const sorted = window.currentStudents.slice().sort(function(a, b) {
+        if ((a.grade||'') === (b.grade||'')) return (a.class_number||'').toString().localeCompare((b.class_number||'').toString());
+        return (a.grade||'').localeCompare(b.grade||'');
+      });
+      let rows = '';
+      sorted.forEach(function(s, i) {
+        rows += '<tr><td class="name-cell"><strong>' + (i+1) + '- ' + s.full_name + '</strong></td>' +
+          '<td dir="ltr">' + (s.national_id||'-') + '</td>' +
+          '<td>' + (s.grade||'-') + '</td>' +
+          '<td>' + (s.class_number||'-') + '</td>' +
+          '<td>' + (s.nationality||'-') + '</td></tr>';
+      });
+      _openPrintWin('بيان المشاركين',
+        _printHeader(batchNum, today) +
+        '<div class="report-title"><h2>بيان بأسماء الطلاب المشاركين في الدفعة</h2></div>' +
+        '<table><thead><tr>' +
+        '<th style="width:28%;text-align:right;padding-right:10px;">اسم الطالب</th>' +
+        '<th style="width:22%;">الهوية الوطنية</th>' +
+        '<th style="width:17%;">الصف</th>' +
+        '<th style="width:17%;">الفصل</th>' +
+        '<th style="width:16%;">الجنسية</th>' +
+        '</tr></thead><tbody>' + rows + '</tbody></table>' + _printSignature()
+      );
     }
-
-    if(type === 'daily') {
-      titleEl.textContent = 'كشف الحضور والتحضير اليومي للحلقة';
-      
-      window.currentStudents.forEach(student => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td><strong>${rank}- ${student.full_name}</strong></td>
-          <td>....................</td>
-          <td>....................</td>
-          <td>........................................</td>
-        `;
-        printTableBody.appendChild(tr);
-        rank++;
-      });
-    } else if(type === 'final') {
-      titleEl.textContent = 'التقرير الختامي المقيَّم والمجمَّع لطلاب الحلقة';
-      
-      window.currentStudents.forEach(student => {
-        const score = window.currentScores[student.id] || 0;
-        let finalEval = 'جيد';
-        if(score > 60) finalEval = 'ممتاز ومتقن';
-        else if(score > 30) finalEval = 'جيد جداً وثابت';
-        
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td><strong>${rank}- ${student.full_name}</strong></td>
-          <td style="text-align:center;">${finalEval}</td>
-          <td style="text-align:center; font-weight:bold;">مُقيَّم</td>
-          <td style="text-align:center; color: var(--color-gold-dark); font-weight:bold;">${score} نقطة</td>
-        `;
-        printTableBody.appendChild(tr);
-        rank++;
-      });
-    } else if(type === 'roster') {
-      titleEl.textContent = 'بيان بأسماء الطلاب المشاركين في الدفعة';
-      thead.innerHTML = `
-        <tr>
-          <th width="30%">اسم الطالب</th>
-          <th width="25%">الهوية الوطنية</th>
-          <th width="15%">الصف</th>
-          <th width="15%">الفصل</th>
-          <th width="15%">الجنسية</th>
-        </tr>
-      `;
-      
-      // Sort by Grade then by Class
-      const sortedStudents = [...window.currentStudents].sort((a, b) => {
-        const gradeA = a.grade || '';
-        const gradeB = b.grade || '';
-        const classA = a.class_number || '';
-        const classB = b.class_number || '';
-        if (gradeA === gradeB) {
-          return classA.localeCompare(classB);
-        }
-        return gradeA.localeCompare(gradeB);
-      });
-
-      sortedStudents.forEach(student => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td><strong>${rank}- ${student.full_name}</strong></td>
-          <td dir="ltr" style="text-align: right;">${student.national_id}</td>
-          <td style="text-align:center;">${student.grade}</td>
-          <td style="text-align:center;">${student.class_number}</td>
-          <td style="text-align:center;">${student.nationality || '-'}</td>
-        `;
-        printTableBody.appendChild(tr);
-        rank++;
-      });
-    }
-    
-    setTimeout(() => { window.print(); }, 200);
   };
 });
+
