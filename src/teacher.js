@@ -276,14 +276,27 @@ document.addEventListener('DOMContentLoaded', () => {
     const titleEl = document.getElementById('print-maintitle');
     const notesCol = document.getElementById('print-notes-col');
     const printTableBody = document.getElementById('print-table-body');
+    const thead = document.getElementById('print-table-head');
     
     if(!window.currentStudents || !printTableBody) return;
     printTableBody.innerHTML = '';
     
     let rank = 1;
+
+    // Default Headers (for daily and final)
+    if (type !== 'roster') {
+      thead.innerHTML = `
+        <tr>
+          <th width="30%">اسم الطالب</th>
+          <th width="20%">التحضير والتسميع</th>
+          <th width="20%">مستوى التجويد</th>
+          <th width="30%">ملاحظات وإنجاز</th>
+        </tr>
+      `;
+    }
+
     if(type === 'daily') {
       titleEl.textContent = 'كشف الحضور والتحضير اليومي للحلقة';
-      notesCol.textContent = 'ملاحظات المعلم';
       
       window.currentStudents.forEach(student => {
         const tr = document.createElement('tr');
@@ -296,9 +309,8 @@ document.addEventListener('DOMContentLoaded', () => {
         printTableBody.appendChild(tr);
         rank++;
       });
-    } else {
+    } else if(type === 'final') {
       titleEl.textContent = 'التقرير الختامي المقيَّم والمجمَّع لطلاب الحلقة';
-      notesCol.textContent = 'مجموع النقاط والتقييم';
       
       window.currentStudents.forEach(student => {
         const score = window.currentScores[student.id] || 0;
@@ -312,6 +324,42 @@ document.addEventListener('DOMContentLoaded', () => {
           <td style="text-align:center;">${finalEval}</td>
           <td style="text-align:center; font-weight:bold;">مُقيَّم</td>
           <td style="text-align:center; color: var(--color-gold-dark); font-weight:bold;">${score} نقطة</td>
+        `;
+        printTableBody.appendChild(tr);
+        rank++;
+      });
+    } else if(type === 'roster') {
+      titleEl.textContent = 'بيان بأسماء الطلاب المشاركين في الدفعة';
+      thead.innerHTML = `
+        <tr>
+          <th width="30%">اسم الطالب</th>
+          <th width="25%">الهوية الوطنية</th>
+          <th width="15%">الصف</th>
+          <th width="15%">الفصل</th>
+          <th width="15%">الجنسية</th>
+        </tr>
+      `;
+      
+      // Sort by Grade then by Class
+      const sortedStudents = [...window.currentStudents].sort((a, b) => {
+        const gradeA = a.grade || '';
+        const gradeB = b.grade || '';
+        const classA = a.class_number || '';
+        const classB = b.class_number || '';
+        if (gradeA === gradeB) {
+          return classA.localeCompare(classB);
+        }
+        return gradeA.localeCompare(gradeB);
+      });
+
+      sortedStudents.forEach(student => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><strong>${rank}- ${student.full_name}</strong></td>
+          <td dir="ltr" style="text-align: right;">${student.national_id}</td>
+          <td style="text-align:center;">${student.grade}</td>
+          <td style="text-align:center;">${student.class_number}</td>
+          <td style="text-align:center;">${student.nationality || '-'}</td>
         `;
         printTableBody.appendChild(tr);
         rank++;
