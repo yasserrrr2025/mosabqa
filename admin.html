@@ -75,6 +75,25 @@
           page-break-inside: avoid;
         }
       }
+      /* Roster print mode: show only the roster elements */
+      @media print {
+        body.print-roster .no-print,
+        body.print-roster .card-header,
+        body.print-roster #printable-header,
+        body.print-roster .print-only-signature,
+        body.print-roster .print-text { display: none !important; }
+
+        body.print-roster #roster-printable-header,
+        body.print-roster #roster-print-area,
+        body.print-roster #roster-print-signature { display: block !important; }
+
+        #roster-print-area .print-table thead { display: table-header-group; }
+        #roster-print-area .print-table tr { page-break-inside: avoid; }
+        #roster-print-area .print-table tbody tr:nth-child(9n):not(:last-child) {
+          page-break-after: always !important;
+          break-after: page !important;
+        }
+      }
     </style>
   </head>
   <body>
@@ -203,6 +222,83 @@
             <div style="text-align: center; font-size: 11pt; font-weight:bold;">المعلم<br><br><br>فهد علي آل رده</div>
             <div style="text-align: center; font-size: 11pt; font-weight:bold;">الختم الرسمي<br><br><br>......................</div>
             <div style="text-align: center; font-size: 11pt; font-weight:bold;">مدير المدرسة<br><br><br>عابد عبيد الجدعاني</div>
+          </div>
+
+          <!-- ===== ROSTER SECTION: Current Batch ===== -->
+          <div id="roster-section" class="no-print" style="margin-top: 40px; background: #fff; border: 1.5px solid rgba(198,162,86,0.3); border-radius: 16px; padding: 25px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.06);">
+            <h2 style="font-family:'Amiri',serif; color:var(--color-primary-dark); margin-bottom:15px; font-size:1.5rem; border-bottom: 2px solid var(--color-gold); padding-bottom: 8px;">
+              📋 تقرير المشاركين - الدفعة الحالية
+            </h2>
+            <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:20px;">
+              <div style="flex:1; min-width:200px;">
+                <label style="font-weight:bold; color:var(--color-primary-dark); margin-bottom:6px; display:block">فلتر حسب الصف:</label>
+                <select id="roster-grade-filter" class="action-select" style="width:100%; font-size:1rem;">
+                  <option value="all">جميع الصفوف</option>
+                </select>
+              </div>
+              <div style="display:flex; gap:10px; align-items:flex-end; padding-top:22px;">
+                <button onclick="window.printRoster()" class="submit-btn" style="width:auto; padding:0.6rem 1.4rem; margin:0; background:#0ea5e9; border-radius:10px;">
+                  🖨️ طباعة التقرير
+                </button>
+              </div>
+            </div>
+            <div style="overflow-x:auto;">
+              <table id="roster-preview-table" class="students-table" style="font-size:0.95rem;">
+                <thead>
+                  <tr>
+                    <th style="width:60%">اسم الطالب</th>
+                    <th style="width:20%">الصف</th>
+                    <th style="width:20%">الفصل</th>
+                  </tr>
+                </thead>
+                <tbody id="roster-table-body">
+                  <tr><td colspan="3" style="text-align:center; color:#999;">جاري تحميل البيانات...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Roster print-only structure -->
+          <div id="roster-printable-header" style="display:none;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; width:100%;">
+              <div style="font-weight:bold; font-size:10pt; line-height:1.7; text-align:right;">
+                المملكة العربية السعودية<br>
+                وزارة التعليم<br>
+                إدارة التعليم بمحافظة جدة<br>
+                مدرسة عماد الدين زنكي المتوسطة
+              </div>
+              <div style="text-align:center; flex-grow:1;">
+                <img src="/new-logo.png" alt="شعار" style="height:65px; object-fit:contain;">
+              </div>
+              <div style="font-weight:bold; font-size:10pt; line-height:1.7; text-align:left;">
+                رقم الدفعة: <span id="roster-print-batch"></span><br>
+                تاريخ: <span id="roster-print-date"></span>
+              </div>
+            </div>
+            <div style="text-align:center; margin-top:12px;">
+              <h2 id="roster-print-title" style="font-size:15pt; border-bottom:2px solid #ccc; display:inline-block; padding-bottom:5px;">بيان بأسماء الطلاب المشاركين</h2>
+            </div>
+          </div>
+
+          <div id="roster-print-area" style="display:none;">
+            <table class="print-table" style="width:100%; border-collapse:collapse; font-family:'Cairo',sans-serif;">
+              <thead id="roster-print-head">
+                <tr>
+                  <th style="width:60%">اسم الطالب</th>
+                  <th style="width:20%">الصف</th>
+                  <th style="width:20%">الفصل</th>
+                </tr>
+              </thead>
+              <tbody id="roster-print-body"></tbody>
+            </table>
+          </div>
+
+          <div id="roster-print-signature" style="display:none;">
+            <div style="display:flex; justify-content:space-between; margin-top:40px; padding:0 10px; font-family:'Amiri',serif; font-size:11pt; font-weight:bold;">
+              <div style="text-align:center;">المعلم<br><br><br>فهد علي آل رده</div>
+              <div style="text-align:center;">الختم الرسمي<br><br><br>......................</div>
+              <div style="text-align:center;">مدير المدرسة<br><br><br>عابد عبيد الجدعاني</div>
+            </div>
           </div>
 
         </div>

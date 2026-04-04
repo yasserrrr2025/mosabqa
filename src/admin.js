@@ -89,11 +89,108 @@ document.addEventListener('DOMContentLoaded', () => {
       // 5. Initial Render
       renderTable('all');
 
+      // 6. Build Roster for current batch
+      buildRoster(settingsData ? settingsData.current_batch : null);
+
     } catch(err) {
       console.error(err);
       alert('فشل في تحميل الإعدادات وبيانات الأرشيف.');
     }
   }
+
+  function buildRoster(currentBatch) {
+    const rosterGradeFilter = document.getElementById('roster-grade-filter');
+    const rosterTableBody = document.getElementById('roster-table-body');
+    if (!rosterGradeFilter || !rosterTableBody) return;
+
+    // Filter to current batch only
+    const currentStudents = allStudents.filter(s => s.batch_number === currentBatch);
+
+    // Sort by grade then class
+    currentStudents.sort((a, b) => {
+      if ((a.grade || '') === (b.grade || '')) {
+        return (a.class_number || '').toString().localeCompare((b.class_number || '').toString());
+      }
+      return (a.grade || '').localeCompare(b.grade || '');
+    });
+
+    // Populate grade dropdown
+    const grades = [...new Set(currentStudents.map(s => s.grade).filter(Boolean))].sort();
+    rosterGradeFilter.innerHTML = '<option value="all">جميع الصفوف</option>';
+    grades.forEach(g => {
+      const opt = document.createElement('option');
+      opt.value = g;
+      opt.textContent = g;
+      rosterGradeFilter.appendChild(opt);
+    });
+
+    const renderRosterPreview = (filter) => {
+      const filtered = filter === 'all' ? currentStudents : currentStudents.filter(s => s.grade === filter);
+      rosterTableBody.innerHTML = '';
+      if (filtered.length === 0) {
+        rosterTableBody.innerHTML = '<tr><td colspan="3" style="text-align:center; color:#999;">لا يوجد بيانات لهذا الفلتر</td></tr>';
+        return;
+      }
+      filtered.forEach((s, i) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><strong>${i + 1}- ${s.full_name}</strong></td>
+          <td style="text-align:center;">${s.grade || '-'}</td>
+          <td style="text-align:center;">${s.class_number || '-'}</td>
+        `;
+        rosterTableBody.appendChild(tr);
+      });
+    };
+
+    // Initial render
+    renderRosterPreview('all');
+
+    // Filter change
+    rosterGradeFilter.addEventListener('change', (e) => renderRosterPreview(e.target.value));
+
+    // Store for print
+    window._rosterStudents = currentStudents;
+    window._rosterBatch = currentBatch;
+  }
+
+  window.printRoster = function() {
+    const filter = document.getElementById('roster-grade-filter')?.value || 'all';
+    const students = filter === 'all'
+      ? (window._rosterStudents || [])
+      : (window._rosterStudents || []).filter(s => s.grade === filter);
+
+    const printBody = document.getElementById('roster-print-body');
+    const printTitle = document.getElementById('roster-print-title');
+    const printBatch = document.getElementById('roster-print-batch');
+    const printDate = document.getElementById('roster-print-date');
+    if (!printBody) return;
+
+    printBatch.textContent = window._rosterBatch || '';
+    printDate.textContent = new Date().toLocaleDateString('ar-SA-u-nu-latn');
+    printTitle.textContent = filter === 'all'
+      ? 'بيان بأسماء جميع الطلاب المشاركين'
+      : `بيان طلاب ${filter} المشاركين`;
+
+    printBody.innerHTML = '';
+    students.forEach((s, i) => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td><strong>${i + 1}- ${s.full_name}</strong></td>
+        <td style="text-align:center;">${s.grade || '-'}</td>
+        <td style="text-align:center;">${s.class_number || '-'}</td>
+      `;
+      printBody.appendChild(tr);
+    });
+
+    // Show print-only elements via body class
+    document.body.classList.add('print-roster');
+    setTimeout(() => {
+      window.print();
+      setTimeout(() => {
+        document.body.classList.remove('print-roster');
+      }, 500);
+    }, 150);
+  };
 
   updateCapacityBtn.addEventListener('click', async () => {
     const newCap = parseInt(capacityInput.value);
