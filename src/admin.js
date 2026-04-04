@@ -299,16 +299,24 @@ document.addEventListener('DOMContentLoaded', () => {
     // ========== Analytics: Podium & Best Batch ==========
     if(podiumContainer) {
        podiumContainer.innerHTML = '';
+       // Remove the fixed height so names don't get clipped
+       podiumContainer.style.height = 'auto';
+       podiumContainer.style.minHeight = '80px';
+       podiumContainer.style.alignItems = 'stretch';
+
        const top3 = filtered.slice(0, 3);
-       const medals = ['🥇 المركز الأول', '🥈 المركز الثاني', '🥉 المركز الثالث'];
+       const medals = ['🥇', '🥈', '🥉'];
+       const labels = ['المركز الأول', 'المركز الثاني', 'المركز الثالث'];
        const colors = ['#f59e0b', '#9ca3af', '#b45309'];
+       const bgColors = ['rgba(245,158,11,0.08)', 'rgba(156,163,175,0.08)', 'rgba(180,83,9,0.08)'];
        
        if(top3.length > 0) {
          podiumContainer.innerHTML = top3.map((s, index) => `
-           <div style="text-align:center; padding: 10px; background: rgba(0,0,0,0.02); border-radius: 8px; border-bottom: 3px solid ${colors[index]}; width: 30%;">
-             <div style="font-size: 1.1rem; margin-bottom: 5px;">${medals[index]}</div>
-             <div style="font-weight:bold; font-size: 0.95rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${s.full_name}">${s.full_name.split(' ').slice(0,2).join(' ')}</div>
-             <div style="color:var(--color-primary-dark); font-weight:bold;">${allScores[s.id]||0} نقطة</div>
+           <div style="text-align:center; padding: 12px 8px; background:${bgColors[index]}; border-radius:10px; border-bottom:3px solid ${colors[index]}; width:30%; display:flex; flex-direction:column; justify-content:center; gap:4px;">
+             <div style="font-size: 1.4rem;">${medals[index]}</div>
+             <div style="font-size: 0.78rem; color:#666; margin-bottom:2px;">${labels[index]}</div>
+             <div style="font-weight:bold; font-size: 0.9rem; line-height:1.4; word-break:break-word; white-space:normal;">${s.full_name}</div>
+             <div style="color:var(--color-primary-dark); font-weight:bold; font-size:0.88rem; margin-top:4px;">${allScores[s.id]||0} نقطة</div>
            </div>
          `).join('');
        } else {
