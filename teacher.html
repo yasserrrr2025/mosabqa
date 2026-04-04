@@ -66,6 +66,32 @@
         max-width: 400px;
         margin: auto;
       }
+      
+      /* Print Optimizations */
+      @media print {
+        @page { margin: 15mm; size: A4 portrait; }
+        .print-table {
+          width: 100%;
+          border-collapse: collapse;
+          page-break-inside: auto;
+        }
+        .print-table tr {
+          page-break-inside: avoid;
+          page-break-after: auto;
+        }
+        .print-table thead {
+          display: table-header-group; /* Repeats header on every page */
+        }
+        .print-table tfoot {
+          display: table-footer-group;
+        }
+        .print-table th, .print-table td {
+          border: 1px solid #777;
+          padding: 10px !important;
+          font-size: 11pt !important;
+        }
+        .print-table th { background-color: #eee !important; color: #000 !important; -webkit-print-color-adjust: exact; }
+      }
     </style>
   </head>
   <body>
@@ -102,13 +128,13 @@
           </div>
 
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 10px;">
-            <div class="status-badge" style="margin: 0; font-weight: bold;">
-              <span>الدفعة الحالية: <span id="batch-number-badge">...</span></span>
+            <div class="status-badge" style="margin: 0; font-weight: bold; background: rgba(198, 162, 86, 0.15); border-left: 4px solid var(--color-primary); border-radius: 8px; padding: 10px 20px;">
+              <span>الدفعة الحالية النشطة: <span id="batch-number-badge" style="font-size: 1.2rem; color: var(--color-primary-dark);">...</span></span>
             </div>
-            <div>
-              <button onclick="window.preparePrint('roster')" class="submit-btn" style="width: auto; padding: 0.5rem 1rem; margin: 0; background: #0ea5e9; box-shadow: none;">📋 بيان المشاركين</button>
-              <button onclick="window.preparePrint('daily')" class="submit-btn" style="width: auto; padding: 0.5rem 1rem; margin: 0; margin-left: 5px; background: #6b7280; box-shadow: none;">📝 طباعة تحضير فارغ</button>
-              <button onclick="window.preparePrint('final')" class="submit-btn" style="width: auto; padding: 0.5rem 1rem; margin: 0; background: var(--color-primary-dark); box-shadow: none;">🏆 تقرير ختامي مقيَّم</button>
+            <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+              <button onclick="window.preparePrint('roster')" class="submit-btn" style="width: auto; padding: 0.6rem 1.2rem; margin: 0; background: #0ea5e9; border-radius: 8px; transition: transform 0.2s;">📋 بيان المشاركين</button>
+              <button onclick="window.preparePrint('daily')" class="submit-btn" style="width: auto; padding: 0.6rem 1.2rem; margin: 0; background: #6b7280; border-radius: 8px; transition: transform 0.2s;">📝 تحضير فارغ</button>
+              <button onclick="window.preparePrint('final')" class="submit-btn" style="width: auto; padding: 0.6rem 1.2rem; margin: 0; background: var(--color-primary-dark); border-radius: 8px; transition: transform 0.2s;">🏆 تقرير ختامي مقيَّم</button>
             </div>
           </div>
 
