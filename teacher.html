@@ -67,7 +67,7 @@
         margin: auto;
       }
       
-      #printable-header, .print-only-signature, .end-of-report { display: none; }
+      #printable-header, .print-only-signature { display: none; }
       
       /* Print Optimizations */
       @media print {
@@ -79,7 +79,6 @@
         .no-print, .card-header, #students-grid, .status-badge { display: none !important; }
         
         #printable-header { display: block !important; margin-bottom: 20px; font-family: 'Amiri', serif; }
-        .end-of-report { display: block !important; text-align: center; font-weight: bold; margin: 20px 0; }
         
         /* The crucial fix for repeating headers and page breaks */
         .print-text { overflow: visible !important; display: block !important; margin-top: 15px !important; }
@@ -112,6 +111,12 @@
         /* Zebra Striping */
         .print-table tbody tr:nth-child(even) {
           background-color: #f8fafc !important;
+        }
+        
+        /* Force page break after every 9 rows to ensure maximum 9 students per page */
+        .print-table tbody tr:nth-child(9n):not(:last-child) {
+          page-break-after: always !important;
+          break-after: page !important;
         }
         
         .print-only-signature {
@@ -202,8 +207,6 @@
           <div id="students-grid" class="students-grid">
             <!-- Cards will be injected here via JS -->
           </div>
-
-          <div class="end-of-report">-- نهاية التقرير --</div>
 
           <div class="print-only-signature">
             <div style="text-align: center; font-size: 11pt; font-weight:bold;">المعلم<br><br><br>فهد علي آل رده</div>
