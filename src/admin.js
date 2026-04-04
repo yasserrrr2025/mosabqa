@@ -154,101 +154,98 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   window.printRoster = function() {
-    const filter = document.getElementById('roster-grade-filter')?.value || 'all';
+    const filter = document.getElementById('roster-grade-filter') ? document.getElementById('roster-grade-filter').value : 'all';
     const students = filter === 'all'
       ? (window._rosterStudents || [])
-      : (window._rosterStudents || []).filter(s => s.grade === filter);
+      : (window._rosterStudents || []).filter(function(s) { return s.grade === filter; });
 
     const batchNum = window._rosterBatch || '';
     const today = new Date().toLocaleDateString('ar-SA-u-nu-latn');
     const title = filter === 'all'
       ? 'بيان بأسماء جميع الطلاب المشاركين'
-      : `بيان طلاب ${filter} المشاركين`;
+      : ('بيان طلاب ' + filter + ' المشاركين');
 
-    const rows = students.map((s, i) => `
-      <tr>
-        <td><strong>${i + 1}- ${s.full_name}</strong></td>
-        <td>${s.grade || '-'}</td>
-        <td>${s.class_number || '-'}</td>
-      </tr>
-    `).join('');
+    const rowsArr = students.map(function(s, i) {
+      return '<tr>' +
+        '<td style="text-align:right;"><strong>' + (i+1) + '- ' + s.full_name + '</strong></td>' +
+        '<td>' + (s.grade||'-') + '</td>' +
+        '<td>' + (s.class_number||'-') + '</td>' +
+      '</tr>';
+    });
 
-    const printHTML = `<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-  <meta charset="UTF-8">
-  <title>${title}</title>
-  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Amiri:wght@400;700&display=swap" rel="stylesheet">
-  <style>
-    @page { margin: 8mm; size: A4 portrait; }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Cairo', sans-serif; background: #fff; color: #111; direction: rtl; }
-    
-    /* Official Header */
-    .header { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 12px; border-bottom: 2px solid #ccc; margin-bottom: 15px; }
-    .header-side { font-weight: bold; font-size: 10pt; line-height: 1.8; }
-    .header-center { text-align: center; flex-grow: 1; }
-    .header-center img { height: 65px; object-fit: contain; }
-    
-    /* Title */
-    .report-title { text-align: center; margin: 10px 0 15px; font-family: 'Amiri', serif; }
-    .report-title h2 { font-size: 16pt; display: inline-block; border-bottom: 2px solid #888; padding-bottom: 6px; }
-    
-    /* Table */
-    table { width: 100%; border-collapse: collapse; font-family: 'Cairo', sans-serif; }
-    thead { display: table-header-group; }
-    tr { page-break-inside: avoid; }
-    th { background-color: #f1f5f9; font-weight: 800; font-size: 11pt; padding: 10px 8px; border: 1px solid #a0aec0; text-align: center; }
-    td { padding: 9px 8px; border: 1px solid #a0aec0; font-size: 10pt; text-align: center; vertical-align: middle; }
-    td:first-child { text-align: right; }
-    tbody tr:nth-child(even) { background-color: #f8fafc; }
-    tbody tr:nth-child(9n):not(:last-child) { page-break-after: always; break-after: page; }
-    
-    /* Signature */
-    .signature { display: flex; justify-content: space-between; margin-top: 45px; padding: 0 10px; font-family: 'Amiri', serif; font-size: 11pt; font-weight: bold; page-break-inside: avoid; }
-    .signature div { text-align: center; line-height: 4; }
-  </style>
-</head>
-<body>
-  <div class="header">
-    <div class="header-side" style="text-align:right;">
-      المملكة العربية السعودية<br>
-      وزارة التعليم<br>
-      إدارة التعليم بمحافظة جدة<br>
-      مدرسة عماد الدين زنكي المتوسطة
-    </div>
-    <div class="header-center">
-      <img src="/new-logo.png" alt="شعار التعليم">
-    </div>
-    <div class="header-side" style="text-align:left;">
-      رقم الدفعة: ${batchNum}<br>
-      تاريخ التقرير: ${today}
-    </div>
-  </div>
-  <div class="report-title"><h2>${title}</h2></div>
-  <table>
-    <thead>
-      <tr>
-        <th style="width:60%; text-align:right; padding-right:12px;">اسم الطالب</th>
-        <th style="width:20%;">الصف</th>
-        <th style="width:20%;">الفصل</th>
-      </tr>
-    </thead>
-    <tbody>${rows || '<tr><td colspan="3" style="text-align:center;color:#999;">لا يوجد بيانات</td></tr>'}</tbody>
-  </table>
-  <div class="signature">
-    <div>المعلم<br>فهد علي آل رده</div>
-    <div>الختم الرسمي<br>....................</div>
-    <div>مدير المدرسة<br>عابد عبيد الجدعاني</div>
-  </div>
-  <script>window.onload = function() { window.print(); window.onafterprint = function(){ window.close(); }; }<\/script>
-</body>
-</html>`;
+    const theadHTML = '<tr>' +
+      '<th style="width:60%;text-align:right;padding-right:10px;">اسم الطالب</th>' +
+      '<th style="width:20%;">الصف</th>' +
+      '<th style="width:20%;">الفصل</th>' +
+    '</tr>';
+
+    function buildPages(thead, rows) {
+      var perPage = 9;
+      if (!rows || rows.length === 0) {
+        return '<table><thead>' + thead + '</thead><tbody>' +
+          '<tr><td colspan="3" style="text-align:center;color:#999;">لا يوجد بيانات</td></tr>' +
+          '</tbody></table>';
+      }
+      var pages = [];
+      for (var i = 0; i < rows.length; i += perPage) pages.push(rows.slice(i, i + perPage));
+      return pages.map(function(chunk, idx) {
+        var isLast = idx === pages.length - 1;
+        return '<div style="page-break-after:' + (isLast ? 'auto' : 'always') + ';">' +
+          '<table><thead>' + thead + '</thead><tbody>' + chunk.join('') + '</tbody></table></div>';
+      }).join('');
+    }
+
+    const gFont = 'https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;800&family=Amiri:wght@400;700&display=swap';
+    const css = [
+      '@page { margin: 8mm; size: A4 portrait; }',
+      '* { box-sizing: border-box; margin: 0; padding: 0; }',
+      'body { font-family: Cairo, sans-serif; background: #fff; color: #111; direction: rtl; }',
+      '.header { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 12px; border-bottom: 2px solid #ccc; margin-bottom: 15px; }',
+      '.header-side { font-weight: bold; font-size: 10pt; line-height: 1.8; }',
+      '.header-center { text-align: center; flex-grow: 1; }',
+      '.header-center img { height: 65px; object-fit: contain; }',
+      '.report-title { text-align: center; margin: 10px 0 15px; }',
+      '.report-title h2 { font-size: 15pt; display: inline-block; border-bottom: 2px solid #888; padding-bottom: 6px; }',
+      'table { width: 100%; border-collapse: collapse; }',
+      'th { background-color: #f1f5f9 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; font-weight: 800; font-size: 11pt; padding: 10px 8px; border: 1px solid #a0aec0; text-align: center; }',
+      'td { padding: 9px 8px; border: 1px solid #a0aec0; font-size: 10pt; vertical-align: middle; text-align: center; }',
+      'tr { page-break-inside: avoid; }',
+      'tbody tr:nth-child(even) { background-color: #f8fafc !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }',
+      '.signature { display: flex; justify-content: space-between; margin-top: 45px; padding: 0 10px; font-size: 11pt; font-weight: bold; page-break-inside: avoid; }',
+      '.signature div { text-align: center; line-height: 4; }'
+    ].join(' ');
+
+    const header = '<div class="header">' +
+      '<div class="header-side" style="text-align:right;">' +
+        'المملكة العربية السعودية<br>' +
+        'وزارة التعليم<br>' +
+        'إدارة التعليم بمحافظة جدة<br>' +
+        'مدرسة عماد الدين زنكي المتوسطة' +
+      '</div>' +
+      '<div class="header-center"><img src="/new-logo.png" alt="logo"></div>' +
+      '<div class="header-side" style="text-align:left;">' +
+        'رقم الدفعة: ' + batchNum + '<br>' +
+        'تاريخ التقرير: ' + today +
+      '</div></div>';
+
+    const sig = '<div class="signature">' +
+      '<div>المعلم<br>فهد علي آل رده</div>' +
+      '<div>الختم الرسمي<br>....................</div>' +
+      '<div>مدير المدرسة<br>عابد عبيد الجدعاني</div>' +
+    '</div>';
+
+    const bodyContent = header +
+      '<div class="report-title"><h2>' + title + '</h2></div>' +
+      buildPages(theadHTML, rowsArr) + sig;
+
+    const htmlDoc = '<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><title>' + title + '</title>' +
+      '<link href="' + gFont + '" rel="stylesheet">' +
+      '<style>' + css + '</style></head><body>' + bodyContent +
+      '<scr' + 'ipt>window.onload=function(){window.print();window.onafterprint=function(){window.close();};};<' + '/script>' +
+      '</body></html>';
 
     const win = window.open('', '_blank', 'width=900,height=700');
-    win.document.open();
-    win.document.write(printHTML);
-    win.document.close();
+    win.document.open(); win.document.write(htmlDoc); win.document.close();
   };
 
   updateCapacityBtn.addEventListener('click', async () => {
@@ -408,13 +405,56 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   window.printAdminArchive = function() {
-    const filterVal = document.getElementById('batch-filter') ? document.getElementById('batch-filter').value : 'all';
+    if (!allStudents || allStudents.length === 0) return alert('لا يوجد بيانات للطباعة.');
+    const filterEl = document.getElementById('batch-filter');
+    const filterVal = filterEl ? filterEl.value : 'all';
     const filterLabel = filterVal === 'all' ? 'السجل التاريخي الشامل' : ('دفعة ' + filterVal);
     const today = new Date().toLocaleDateString('ar-SA-u-nu-latn');
 
-    // Get rendered rows from the table body
-    const tbody = document.getElementById('admin-table-body');
-    const rowsHTML = tbody ? tbody.innerHTML : '<tr><td colspan="5">لا بيانات</td></tr>';
+    // Build rows from data (not DOM innerHTML) to avoid CSS variable issues
+    let filtered = allStudents;
+    if (filterVal !== 'all') {
+      const bn = parseInt(filterVal);
+      filtered = allStudents.filter(function(s) { return s.batch_number === bn; });
+    }
+    filtered = filtered.slice().sort(function(a, b) {
+      return ((allScores[b.id]||0) - (allScores[a.id]||0));
+    });
+
+    const rowsArr = filtered.map(function(s, i) {
+      const score = allScores[s.id] || 0;
+      let eval_ = 'جيد وحافظ';
+      if (score > 60) eval_ = 'متميز ومتقن';
+      else if (score > 30) eval_ = 'جيد جداً وثابت';
+      else if (score === 0) eval_ = 'لم يستكمل التقييم';
+      return '<tr>' +
+        '<td style="text-align:right;"><strong>' + (i+1) + '- ' + s.full_name + '</strong><br>' +
+        '<small style="color:#666;">' + (s.grade||'') + ' - فصل ' + (s.class_number||'') + '</small></td>' +
+        '<td style="text-align:center;">' + (s.national_id||'-') + '</td>' +
+        '<td style="direction:ltr;text-align:right;">' + (s.parent_phone||'-') + '</td>' +
+        '<td style="text-align:center;font-weight:bold;">' + (s.batch_number||'-') + '</td>' +
+        '<td style="text-align:center;"><strong>' + score + ' نقطة</strong><br><small>' + eval_ + '</small></td>' +
+        '</tr>';
+    });
+
+    const theadHTML = '<tr>' +
+      '<th style="width:30%;text-align:right;padding-right:8px;">الطالب</th>' +
+      '<th style="width:15%;">الهوية</th>' +
+      '<th style="width:15%;">الجوال</th>' +
+      '<th style="width:10%;">رقم الدفعة</th>' +
+      '<th style="width:30%;">التقييم والنقاط</th>' +
+      '</tr>';
+
+    function buildPages(thead, rows) {
+      var perPage = 9;
+      var pages = [];
+      for (var i = 0; i < rows.length; i += perPage) pages.push(rows.slice(i, i + perPage));
+      return pages.map(function(chunk, idx) {
+        var isLast = idx === pages.length - 1;
+        return '<div style="page-break-after:' + (isLast ? 'auto' : 'always') + ';">' +
+          '<table><thead>' + thead + '</thead><tbody>' + chunk.join('') + '</tbody></table></div>';
+      }).join('');
+    }
 
     const gFont = 'https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;800&family=Amiri:wght@400;700&display=swap';
     const css = [
@@ -427,13 +467,11 @@ document.addEventListener('DOMContentLoaded', () => {
       '.header-center img { height: 65px; object-fit: contain; }',
       '.report-title { text-align: center; margin: 10px 0 15px; }',
       '.report-title h2 { font-size: 15pt; display: inline-block; border-bottom: 2px solid #888; padding-bottom: 6px; }',
-      'table { width: 100%; border-collapse: collapse; }',
-      'thead { display: table-header-group; }',
-      'tr { page-break-inside: avoid; }',
+      'table { width: 100%; border-collapse: collapse; margin-bottom: 0; }',
       'th { background-color: #f1f5f9 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; font-weight: 800; font-size: 10pt; padding: 9px 6px; border: 1px solid #a0aec0; text-align: center; }',
       'td { padding: 8px 6px; border: 1px solid #a0aec0; font-size: 9.5pt; vertical-align: middle; }',
+      'tr { page-break-inside: avoid; }',
       'tbody tr:nth-child(even) { background-color: #f8fafc !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }',
-      'tbody tr:nth-child(9n):not(:last-child) { page-break-after: always; break-after: page; }',
       '.signature { display: flex; justify-content: space-between; margin-top: 45px; padding: 0 10px; font-size: 11pt; font-weight: bold; page-break-inside: avoid; }',
       '.signature div { text-align: center; line-height: 4; }'
     ].join(' ');
@@ -447,10 +485,8 @@ document.addEventListener('DOMContentLoaded', () => {
       '</div>' +
       '<div class="header-center"><img src="/new-logo.png" alt="logo"></div>' +
       '<div class="header-side" style="text-align:left;">' +
-        'السجل: ' + filterLabel + '<br>' +
-        'تاريخ الاستخراج: ' + today +
-      '</div>' +
-    '</div>';
+        'السجل: ' + filterLabel + '<br>تاريخ: ' + today +
+      '</div></div>';
 
     const sig = '<div class="signature">' +
       '<div>معلم الحلقة<br>فهد علي آل رده</div>' +
@@ -460,21 +496,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const body = header +
       '<div class="report-title"><h2>السجل الشامل لخريجي حلقة تحفيظ القرآن الكريم</h2></div>' +
-      '<table><thead><tr>' +
-      '<th style="width:30%;text-align:right;padding-right:8px;">الطالب</th>' +
-      '<th style="width:15%;">الهوية</th>' +
-      '<th style="width:15%;">الجوال</th>' +
-      '<th style="width:10%;">رقم الدفعة</th>' +
-      '<th style="width:30%;">التقييم والنقاط</th>' +
-      '</tr></thead><tbody>' + rowsHTML + '</tbody></table>' + sig;
+      buildPages(theadHTML, rowsArr) + sig;
 
-    const html = '<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><title>السجل الشامل</title>' +
+    const htmlDoc = '<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8">' +
+      '<title>السجل الشامل</title>' +
       '<link href="' + gFont + '" rel="stylesheet">' +
       '<style>' + css + '</style></head><body>' + body +
       '<scr' + 'ipt>window.onload=function(){window.print();window.onafterprint=function(){window.close();};};<' + '/script>' +
       '</body></html>';
 
     const w = window.open('', '_blank', 'width=900,height=700');
-    w.document.open(); w.document.write(html); w.document.close();
+    w.document.open(); w.document.write(htmlDoc); w.document.close();
   };
 });
