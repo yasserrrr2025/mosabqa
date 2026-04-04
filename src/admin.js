@@ -182,14 +182,32 @@ document.addEventListener('DOMContentLoaded', () => {
       printBody.appendChild(tr);
     });
 
-    // Show print-only elements via body class
-    document.body.classList.add('print-roster');
+    // Prepare print: show roster-only elements, hide main dashboard
+    const rosterEls = ['roster-printable-header', 'roster-print-area', 'roster-print-signature'];
+    const dashboardSection = document.getElementById('dashboard-section');
+
+    // Temporarily hide all direct children of dashboard-section
+    const dashChildren = Array.from(dashboardSection.children);
+    const prevDisplays = dashChildren.map(el => el.style.display);
+    dashChildren.forEach(el => { el.style.setProperty('display', 'none', 'important'); });
+
+    // Show only the roster print elements
+    rosterEls.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.style.setProperty('display', 'block', 'important');
+    });
+
     setTimeout(() => {
       window.print();
       setTimeout(() => {
-        document.body.classList.remove('print-roster');
+        // Restore everything
+        dashChildren.forEach((el, i) => { el.style.display = prevDisplays[i]; });
+        rosterEls.forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.style.display = 'none';
+        });
       }, 500);
-    }, 150);
+    }, 200);
   };
 
   updateCapacityBtn.addEventListener('click', async () => {
