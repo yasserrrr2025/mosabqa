@@ -322,12 +322,27 @@ document.addEventListener('DOMContentLoaded', async () => {
                 document.getElementById('save-parent-id-btn').disabled = true;
                 document.getElementById('save-parent-id-btn').textContent = '⏳ جاري الحفظ...';
 
-                const { error: upError } = await supabase.from('registrations').update({ parent_national_id: pid }).eq('id', student.id);
-                if (upError) { alert('حدث خطأ أثناء الحفظ.'); return; }
+                const { error: upError, count } = await supabase
+                  .from('registrations')
+                  .update({ parent_national_id: pid })
+                  .eq('national_id', student.national_id); // Use National ID as filter for consistency
                 
+                if (upError) { 
+                  console.error('Update Error:', upError);
+                  alert('حدث خطأ فني أثناء حفظ البيانات: ' + (upError.message || 'RLS Permission Denied'));
+                  document.getElementById('save-parent-id-btn').disabled = false;
+                  document.getElementById('save-parent-id-btn').textContent = '💾 إعادة المحاولة';
+                  return; 
+                }
+
                 // If active, go to parent portal directly
                 if (student.status === 'active' || student.status === 'accepted') {
-                   window.location.href = `/parent.html?id=${student.national_id}`;
+                   // Success transition
+                   document.getElementById('save-parent-id-btn').style.background = '#16a34a';
+                   document.getElementById('save-parent-id-btn').textContent = '✅ تم الحفظ بنجاح! جاري الانتقال...';
+                   setTimeout(() => {
+                      window.location.href = `/parent.html?id=${student.national_id}`;
+                   }, 1000);
                 } else {
                    // Otherwise refresh inquiry to show waitlist status
                    performInquiry(student.national_id);
