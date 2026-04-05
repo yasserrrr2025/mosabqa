@@ -382,6 +382,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     // ===============================================
 
+    // Clear both tables first
+    adminTableBody.innerHTML = '';
+    const waitlistTableBody = document.getElementById('waitlist-table-body');
+    if(waitlistTableBody) waitlistTableBody.innerHTML = '';
+
     // Render Active Students (Table 1)
     let rank = 1;
     activeStudents.forEach(student => {
@@ -424,15 +429,11 @@ document.addEventListener('DOMContentLoaded', () => {
       rank++;
     });
 
-    // Render Waitlist Students (Table 2 - Sequential Priority)
+    // Render Waitlist Students (Table 2)
     const waitlistSection = document.getElementById('waitlist-section');
-    const waitlistTableBody = document.getElementById('waitlist-table-body');
-    
     if (waitlistTableBody) {
-      waitlistTableBody.innerHTML = '';
       if (waitlistedStudents.length > 0) {
         if(waitlistSection) waitlistSection.style.display = 'block';
-        
         waitlistedStudents.forEach((student, index) => {
           const tr = document.createElement('tr');
           const dateObj = new Date(student.created_at);

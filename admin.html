@@ -236,24 +236,63 @@
       
       /* Better table scrolling on mobile */
       .table-wrapper {
-        width: 100%;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-        border-radius: 12px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-        margin-bottom: 20px;
         background: #fff;
+        border-radius: 18px;
+        overflow-x: auto;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+        margin-bottom: 30px;
+        border: 1px solid #eee;
+        -webkit-overflow-scrolling: touch;
       }
-      .students-table { min-width: 800px; width: 100%; } /* Prevent squishing */
       
-      /* Controls responsiveness */
-      .controls-bar {
-        display: flex;
-        flex-direction: row;
-        justify-content: space-between;
-        align-items: center;
-        gap: 15px;
-        padding: 20px;
+      .students-table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 800px; /* ضمان عدم انضغاط الجدول على الجوال */
+      }
+
+      /* Responsive Grid Stacking */
+      @media (max-width: 992px) {
+        .admin-grid {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+
+      @media (max-width: 768px) {
+        .admin-grid {
+          grid-template-columns: 1fr;
+        }
+        .header-content {
+          padding: 20px;
+        }
+        .main-title {
+          font-size: 1.8rem;
+        }
+        .app-container {
+          padding: 10px;
+        }
+        .dashboard-header {
+            flex-direction: column;
+            gap: 15px;
+            text-align: center;
+        }
+        .action-btns {
+            width: 100%;
+            justify-content: center;
+        }
+      }
+
+      /* Custom Scrollbar for premium feel */
+      .table-wrapper::-webkit-scrollbar {
+        height: 6px;
+      }
+      .table-wrapper::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 10px;
+      }
+      .table-wrapper::-webkit-scrollbar-thumb {
+        background: var(--color-gold-dark);
+        border-radius: 10px;
       }
       
       @media (max-width: 950px) {
