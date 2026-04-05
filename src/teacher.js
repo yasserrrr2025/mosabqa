@@ -494,5 +494,70 @@ document.addEventListener('DOMContentLoaded', () => {
       );
     }
   };
+
+  /**
+   * Export currently loaded students to Excel-compatible CSV format
+   */
+  window.exportToExcel = function() {
+    if (!window.currentStudents || window.currentStudents.length === 0) {
+      return alert('لا يوجد طلاب محملون للتصدير حالياً.');
+    }
+
+    const headers = [
+      'رقم الهوية',
+      'اسم الطالب',
+      'الجنسية',
+      'الصف',
+      'اسم الحلقة',
+      'اسم المعلم',
+      'اسم المسجد',
+      'رقم هوية ولي الأمر'
+    ];
+
+    const mosque = 'مدرسة عماد الدين زنكي المتوسطة';
+    const teacherInput = 'فهد علي آل رده';
+    const circle = 'حلقة تحفيظ القرآن الكريم';
+
+    // Build Rows
+    const rows = window.currentStudents.map(s => [
+      s.national_id || '-',
+      s.full_name || '-',
+      s.nationality || 'سعودي',
+      s.grade || '-',
+      circle,
+      teacherInput,
+      mosque,
+      s.parent_national_id || '-'
+    ]);
+
+    // Use BOM for Arabic support in Excel (CSV UTF-8 with BOM)
+    let csvContent = "\uFEFF"; 
+    
+    // Add Headers
+    csvContent += headers.map(h => `"${h}"`).join(",") + "\n";
+
+    // Add Data Rows
+    rows.forEach(row => {
+      const formatted = row.map(cell => `"${cell.toString().replace(/"/g, '""')}"`).join(",");
+      csvContent += formatted + "\n";
+    });
+
+    try {
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      const filename = `تقرير_طلاب_الحلقة_${new Date().toISOString().split('T')[0]}.csv`;
+      
+      link.setAttribute("href", url);
+      link.setAttribute("download", filename);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error(e);
+      alert('حدث خطأ أثناء محاولة التصدير.');
+    }
+  };
 });
 
