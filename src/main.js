@@ -16,6 +16,17 @@ document.addEventListener('DOMContentLoaded', async () => {
   const feedbackMessage = document.getElementById('form-feedback');
   const submitBtn = document.getElementById('submit-btn');
 
+  // Check for tab parameter in URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const targetTab = urlParams.get('tab');
+  if (targetTab === 'inquiry') {
+    // We need to wait for elements to be ready, but they are since it's DOMContentLoaded
+    setTimeout(() => {
+        const tabInquiryBtn = document.getElementById('tab-inquiry-btn');
+        if (tabInquiryBtn) tabInquiryBtn.click();
+    }, 100);
+  }
+
   // Initial check of registration count
   try {
     await checkRegistrationStatus();

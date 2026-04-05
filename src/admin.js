@@ -103,6 +103,7 @@ document.addEventListener('DOMContentLoaded', () => {
   async function buildRoster(batchNum) {
     if (!batchNum) return;
     
+    let currentRosterTab = 'active'; // Initialize current tab
     const currentStudents = allStudents.filter(s => s.batch_number === batchNum);
     const rosterTableBody = document.getElementById('roster-table-body');
     const rosterGradeFilter = document.getElementById('roster-grade-filter');
@@ -131,15 +132,15 @@ document.addEventListener('DOMContentLoaded', () => {
         tabActiveBtn.style.background = 'var(--color-primary)';
         tabActiveBtn.style.color = '#fff';
         tabWaitlistBtn.style.background = 'transparent';
-        tabWaitlistBtn.style.color = '#666';
-        rosterTitle.textContent = '📋 تقرير المشاركين - الدفعة الحالية';
+        tabWaitlistBtn.style.color = '#4a5568';
+        rosterTitle.innerHTML = '<span id="roster-icon">📋</span> تقرير المشاركين - الدفعة الحالية';
         rosterSubtitle.textContent = 'إدارة بيانات ومعلومات الطلاب في الدورة الحالية';
       } else {
         tabWaitlistBtn.style.background = 'var(--color-primary)';
         tabWaitlistBtn.style.color = '#fff';
         tabActiveBtn.style.background = 'transparent';
-        tabActiveBtn.style.color = '#666';
-        rosterTitle.textContent = '⏳ الطلاب الاحتياط - الدفعة الحالية';
+        tabActiveBtn.style.color = '#4a5568';
+        rosterTitle.innerHTML = '<span id="roster-icon">⏳</span> الطلاب الاحتياط - الدفعة الحالية';
         rosterSubtitle.textContent = 'قائمة الانتظار مرتبة حسب أولوية التسجيل (من الأقدم للأحدث)';
       }
     }
@@ -233,10 +234,12 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // Initial render
+    updateTabUI();
     renderRosterPreview('all');
 
-    // Filter change
-    rosterGradeFilter.addEventListener('change', (e) => renderRosterPreview(e.target.value));
+    // Filter changes
+    rosterGradeFilter.addEventListener('change', (e) => renderRosterPreview(e.target.value, rosterSearch.value));
+    rosterSearch.addEventListener('input', (e) => renderRosterPreview(rosterGradeFilter.value, e.target.value));
 
     // Store for print
     window._rosterStudents = currentStudents;
