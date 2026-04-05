@@ -257,27 +257,28 @@ document.addEventListener('DOMContentLoaded', async () => {
       const { data: settingsData } = await supabase.from('settings').select('current_batch').single();
       const currentBatch = settingsData ? settingsData.current_batch : 1;
 
-      // Search by Student ID OR Parent ID
+      // Search by Student ID OR Parent ID in ALL batches
       const { data: students, error } = await supabase
         .from('registrations')
         .select('*')
         .or(`national_id.eq.${inputVal},parent_national_id.eq.${inputVal}`)
-        .eq('batch_number', currentBatch)
+        .order('batch_number', { ascending: false }) // Newest batch first
         .order('created_at', { ascending: false });
 
       if (error || !students || students.length === 0) {
         inquiryResult.innerHTML = `
-          <div style="background:#fee2e2; color:#b91c1c; padding:25px; border-radius:18px; border:1px solid #fecaca; text-align:center; animation: slideUp 0.4s ease-out;">
-            <div style="font-size:3.5rem; margin-bottom:15px;">🔍</div>
-            <h3 style="margin-bottom:10px; font-family:'Amiri', serif; font-size:1.5rem;">عذراً، لم نجد نتائج!</h3>
-            <p style="color:#7f1d1d; font-size:0.95rem; line-height:1.6;">
-              تأكد من إدخال رقم هوية صحيح (للطالب أو ولي الأمر) مسجل في الدفعة الحالية (<strong>${currentBatch}</strong>).
+          <div style="background: linear-gradient(145deg, #fff5f5, #fff0f0); color:#991b1b; padding:32px 25px; border-radius:24px; border:2.5px dashed #fecaca; text-align:center; animation: slideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); box-shadow: 0 10px 25px rgba(220, 38, 38, 0.05);">
+            <div style="background:#fecaca; color:#dc2626; width:70px; height:70px; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 20px; font-size:2.2rem; box-shadow: 0 5px 15px rgba(220, 38, 38, 0.1);">🔍</div>
+            <h3 style="margin-bottom:12px; font-family:'Amiri', serif; font-size:1.6rem; color:#7f1d1d;">عفواً.. لم نجد سجلاً!</h3>
+            <p style="color:#991b1b; font-size:1rem; line-height:1.7; margin-bottom:20px;">
+              رقم الهوية (<strong>${inputVal}</strong>) غير مسجل حالياً في الدفعة رقم (<strong>${currentBatch}</strong>).<br>
+              <span style="font-size:0.9rem; opacity:0.8;">تأكد من الرقم أو بادر بتسجيل بيانات الطالب الآن.</span>
             </p>
-            <button id="go-to-register" style="margin-top:20px; background:#b91c1c; color:#fff; border:none; padding:10px 20px; border-radius:10px; cursor:pointer; font-weight:bold; font-family:inherit;">العودة لصفحة التسجيل</button>
+            <button id="go-to-register" class="submit-btn" style="background:#dc2626; border:none; padding:12px 25px; border-radius:14px; cursor:pointer; font-weight:bold; font-family:inherit; box-shadow: 0 4px 12px rgba(220, 38, 38, 0.2); width:100%;">📝 البدء بتسجيل الطالب الآن</button>
           </div>`;
         setTimeout(() => {
           document.getElementById('go-to-register')?.addEventListener('click', () => switchTab('register'));
-        }, 0);
+        }, 50);
       } else {
         // Results Rendering
         inquiryResult.innerHTML = '';

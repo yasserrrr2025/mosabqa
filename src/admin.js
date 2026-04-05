@@ -169,7 +169,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const matchesGrade = gradeFilter === 'all' || s.grade === gradeFilter;
         const matchesSearch = !searchFilter || 
                              s.full_name.toLowerCase().includes(searchFilter.toLowerCase()) || 
-                             (s.national_id && s.national_id.includes(searchFilter));
+                             (s.national_id && s.national_id.includes(searchFilter)) ||
+                             (s.parent_national_id && s.parent_national_id.includes(searchFilter));
         return matchesStatus && matchesGrade && matchesSearch;
       });
 
