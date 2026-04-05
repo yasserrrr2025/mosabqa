@@ -55,7 +55,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       nationality: formData.get('nationality').trim(),
       grade: formData.get('grade'),
       class_number: formData.get('classNumber'),
-      parent_phone: formData.get('parentPhone').trim()
+      parent_phone: formData.get('parentPhone').trim(),
+      parent_national_id: formData.get('parentNationalId').trim()
     };
 
     // Extra validation for phone (in case HTML5 validation is bypassed)
@@ -241,8 +242,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   tabInquiryBtn.addEventListener('click', () => switchTab('inquiry'));
 
   inquirySubmit.addEventListener('click', async () => {
-    const nationalId = inquiryInput.value.trim();
-    if (!nationalId) { 
+    const inputVal = inquiryInput.value.trim();
+    if (!inputVal) { 
       inquiryResult.innerHTML = `<div class="feedback-message feedback-error" style="display:block;">يرجى إدخال رقم الهوية</div>`;
       inquiryResult.style.display = 'block';
       return; 
@@ -253,84 +254,128 @@ document.addEventListener('DOMContentLoaded', async () => {
     inquiryResult.style.display = 'none';
 
     try {
-      // Re-get current batch to ensure we search correctly
       const { data: settingsData } = await supabase.from('settings').select('current_batch').single();
       const currentBatch = settingsData ? settingsData.current_batch : 1;
 
-      const { data: student, error } = await supabase
+      // Search by Student ID OR Parent ID
+      const { data: students, error } = await supabase
         .from('registrations')
         .select('*')
-        .eq('national_id', nationalId)
+        .or(`national_id.eq.${inputVal},parent_national_id.eq.${inputVal}`)
         .eq('batch_number', currentBatch)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
+        .order('created_at', { ascending: false });
 
-      if (error || !student) {
+      if (error || !students || students.length === 0) {
         inquiryResult.innerHTML = `
           <div style="background:#fee2e2; color:#b91c1c; padding:25px; border-radius:18px; border:1px solid #fecaca; text-align:center; animation: slideUp 0.4s ease-out;">
             <div style="font-size:3.5rem; margin-bottom:15px;">🔍</div>
-            <h3 style="margin-bottom:10px; font-family:'Amiri', serif; font-size:1.5rem;">عذراً، الطالب غير مسجل!</h3>
+            <h3 style="margin-bottom:10px; font-family:'Amiri', serif; font-size:1.5rem;">عذراً، لم نجد نتائج!</h3>
             <p style="color:#7f1d1d; font-size:0.95rem; line-height:1.6;">
-              لم يتم العثور على أي سجل برقم الهوية (<strong>${nationalId}</strong>) في الدورة الحالية.<br>
-              يرجى التأكد من الرقم أو البدء بتسجيل طالب جديد.
+              تأكد من إدخال رقم هوية صحيح (للطالب أو ولي الأمر) مسجل في الدفعة الحالية (<strong>${currentBatch}</strong>).
             </p>
             <button id="go-to-register" style="margin-top:20px; background:#b91c1c; color:#fff; border:none; padding:10px 20px; border-radius:10px; cursor:pointer; font-weight:bold; font-family:inherit;">العودة لصفحة التسجيل</button>
           </div>`;
-          
         setTimeout(() => {
           document.getElementById('go-to-register')?.addEventListener('click', () => switchTab('register'));
         }, 0);
       } else {
-        const isActive = student.status === 'active';
-        
-        if (isActive) {
-           // Redirect to parent page as it contains everything
-           inquiryResult.innerHTML = `
-            <div style="background:#f0fdf4; border:2px solid #bbfcce; padding:30px; border-radius:20px; text-align:center; animation: fadeIn 0.5s ease-out; box-shadow: 0 10px 25px rgba(22, 163, 74, 0.05);">
-              <div class="loader" style="margin: 0 auto 15px; width: 40px; height: 40px;"></div>
-              <h3 style="color:#16a34a; font-family:'Amiri', serif; font-size:1.6rem; margin-bottom:10px;">تم العثور على الطالب 🎉</h3>
-              <p style="color:#15803d; margin-bottom:5px; font-weight:bold;">مرحباً بك، ${student.full_name}</p>
-              <p style="color:#15803d; font-size:0.9rem;">جاري تحويلك الآن إلى بوابة ولي الأمر للاطلاع على كامل التقارير والمنجزات...</p>
-            </div>`;
-            inquiryResult.style.display = 'block';
-            setTimeout(() => {
-              window.location.href = `/parent.html?id=${nationalId}`;
-            }, 1800);
-            return;
-        } else {
-          // Waitlist Card
-          const { count: rank } = await supabase
-            .from('registrations')
-            .select('*', { count: 'exact', head: true })
-            .eq('batch_number', student.batch_number)
-            .eq('status', 'waitlisted')
-            .lte('created_at', student.created_at);
+        // Results Rendering
+        inquiryResult.innerHTML = '';
+        inquiryResult.style.display = 'block';
 
-          inquiryResult.innerHTML = `
-            <div style="background: linear-gradient(145deg, #fffbeb, #fef3c7); border:2px solid #fcd34d; padding:25px; border-radius:20px; text-align:center; box-shadow: 0 10px 20px rgba(245, 158, 11, 0.1); animation: slideUp 0.5s ease-out;">
-              <div style="background:#f59e0b; color:#fff; width:60px; height:60px; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 20px; font-size:1.8rem; box-shadow:0 5px 15px rgba(245, 158, 11, 0.3);">⏳</div>
-              <h3 style="color:#92400e; font-family:'Amiri', serif; font-size:1.5rem; margin-bottom:8px;">حالة الطالب: قائمة الاحتياط</h3>
-              <div style="color:#b45309; font-weight:600; font-size:1.1rem; margin-bottom:15px; background:rgba(255,255,255,0.7); display:inline-block; padding:8px 20px; border-radius:20px; border:1px solid rgba(245, 158, 11, 0.2);">
-                ${student.full_name}
-              </div>
-              <div style="background: #fff; padding:20px; border-radius:18px; border:1px dashed #f59e0b; margin-bottom:15px; position:relative;">
-                <p style="color:#6b7280; font-size:0.9rem; margin-bottom:5px;">رقم ترتيبك في قائمة الانتظار:</p>
-                <div style="font-size:3.5rem; font-weight:800; color:#d97706; font-family:'Cairo', sans-serif; line-height:1;">${rank}</div>
-                <div style="position:absolute; top:-10px; right:-10px; background:#f59e0b; color:#fff; padding:2px 10px; border-radius:10px; font-size:0.7rem;">تحديث حي</div>
-              </div>
-              <p style="color:#92400e; font-size:0.9rem; line-height:1.6; padding: 0 10px;">نعتذر لعدم وجود مقعد شاغر حالياً، وسيتم التواصل معكم فوراً عند انسحاب أي طالب أو زيادة الطاقة الاستيعابية.</p>
-              <div style="margin-top:20px; display:flex; justify-content:space-between; align-items:center; font-size:0.75rem; color:#b45309; opacity:0.7; padding-top:15px; border-top:1px solid rgba(245, 158, 11, 0.1);">
-                <span>تاريخ التسجيل: ${new Date(student.created_at).toLocaleDateString('ar-SA')}</span>
-                <span>الدفعة: ${student.batch_number}</span>
-              </div>
+        // Check if Guardian search (multiple kids) or single Student search
+        if (students.length > 1) {
+           // List of children
+           inquiryResult.innerHTML = `
+            <div style="background:#fff; border:1.5px solid var(--color-primary-dark); padding:25px; border-radius:20px; animation: fadeIn 0.4s ease-out;">
+              <h3 style="color:var(--color-primary-dark); font-family:'Amiri', serif; font-size:1.4rem; text-align:center; margin-bottom:15px;">كشف الأبناء المسجلين 👨‍👩‍👦</h3>
+              <p style="text-align:center; color:#666; font-size:0.85rem; margin-bottom:20px;">تم العثور على ${students.length} طلاب مرتبطين برقم الهوية هذا:</p>
+              <div id="children-list" style="display:flex; flex-direction:column; gap:10px;"></div>
             </div>`;
+           
+           const list = inquiryResult.querySelector('#children-list');
+           students.forEach(s => {
+              const btn = document.createElement('button');
+              btn.className = 'submit-btn';
+              btn.style.cssText = 'background:#f8fafc; color:#1e293b; border:1px solid #e2e8f0; font-size:0.92rem; text-align:right; justify-content:space-between; box-shadow:none;';
+              const statusTag = s.status === 'active' ? '<span style="color:#16a34a;">أساسي ✅</span>' : '<span style="color:#f59e0b;">احتياط ⏳</span>';
+              btn.innerHTML = `<span>${s.full_name}</span> ${statusTag}`;
+              btn.onclick = () => {
+                if (s.status === 'active') window.location.href = `/parent.html?id=${s.national_id}`;
+                else alert('الطالب في قائمة الاحتياط، التقارير تظهر بعد القبول النهائي.');
+              };
+              list.appendChild(btn);
+           });
+        } else {
+           const student = students[0];
+           // Single result logic
+           if (student.status === 'active') {
+              // Redirect or Prompt for missing parent ID
+              if (!student.parent_national_id) {
+                inquiryResult.innerHTML = `
+                  <div style="background:#fff7ed; border:2.5px dashed #fcd34d; padding:25px; border-radius:20px; text-align:center; animation: bounceIn 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);">
+                    <div style="font-size:3rem; margin-bottom:10px;">⚠️</div>
+                    <h3 style="color:#92400e; font-family:'Amiri', serif; font-size:1.5rem; margin-bottom:5px;">بيانات الحساب غير مكتملة</h3>
+                    <p style="color:#b45309; font-size:0.9rem; margin-bottom:20px;">مرحباً بك يا <strong>${student.full_name}</strong>. نعتذر، يجب تزويدنا برقم هوية ولي الأمر لإتمام ربط حسابك بالتقارير الرسمية.</p>
+                    <input type="text" id="new-parent-id" placeholder="أدخل رقم هوية ولي الأمر (10 أرقام)" style="width:100%; padding:12px; border-radius:10px; border:1.5px solid #fcd34d; margin-bottom:15px; text-align:center; font-family:inherit;" maxlength="10">
+                    <button id="save-parent-id-btn" class="submit-btn" style="background:#d97706;">💾 حفظ البيانات وفتح التقارير</button>
+                    <div id="save-error" style="color:#dc2626; font-size:0.8rem; margin-top:8px; display:none;">يرجى إدخال 10 أرقام صحيحة</div>
+                  </div>`;
+                
+                document.getElementById('save-parent-id-btn').onclick = async () => {
+                   const pid = document.getElementById('new-parent-id').value.trim();
+                   if (pid.length !== 10) { document.getElementById('save-error').style.display='block'; return; }
+                   
+                   document.getElementById('save-parent-id-btn').disabled = true;
+                   document.getElementById('save-parent-id-btn').textContent = '⏳ جاري الحفظ...';
+
+                   const { error: upError } = await supabase
+                     .from('registrations')
+                     .update({ parent_national_id: pid })
+                     .eq('id', student.id);
+                   
+                   if (upError) { alert('خطأ في الحفظ، يرجى المحاولة لاحقاً'); return; }
+                   window.location.href = `/parent.html?id=${student.national_id}`;
+                };
+              } else {
+                inquiryResult.innerHTML = `
+                  <div style="background:#f0fdf4; border:2px solid #bbfcce; padding:30px; border-radius:20px; text-align:center; animation: fadeIn 0.5s ease-out;">
+                    <div class="loader" style="margin: 0 auto 15px; width: 40px; height: 40px;"></div>
+                    <h3 style="color:#16a34a; font-family:'Amiri', serif; font-size:1.6rem; margin-bottom:10px;">تم العثور على الطالب 🎉</h3>
+                    <p style="color:#15803d; margin-bottom:5px; font-weight:bold;">مرحباً بك، ${student.full_name}</p>
+                    <p style="color:#15803d; font-size:0.9rem;">جاري تحويلك الآن إلى بوابة ولي الأمر للاطلاع على كامل التقارير...</p>
+                  </div>`;
+                setTimeout(() => window.location.href = `/parent.html?id=${student.national_id}`, 1800);
+              }
+           } else {
+             // Waitlist Card (Keep original logic but updated for single/multi)
+             const { count: rank } = await supabase
+               .from('registrations')
+               .select('*', { count: 'exact', head: true })
+               .eq('batch_number', student.batch_number)
+               .eq('status', 'waitlisted')
+               .lte('created_at', student.created_at);
+
+             inquiryResult.innerHTML = `
+               <div style="background: linear-gradient(145deg, #fffbeb, #fef3c7); border:2px solid #fcd34d; padding:25px; border-radius:20px; text-align:center; box-shadow: 0 10px 20px rgba(245, 158, 11, 0.1); animation: slideUp 0.5s ease-out;">
+                 <div style="background:#f59e0b; color:#fff; width:60px; height:60px; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 20px; font-size:1.8rem;">⏳</div>
+                 <h3 style="color:#92400e; font-family:'Amiri', serif; font-size:1.5rem; margin-bottom:8px;">حالة الطالب: قائمة الاحتياط</h3>
+                 <div style="color:#b45309; font-weight:600; font-size:1.1rem; margin-bottom:15px; background:rgba(255,255,255,0.7); display:inline-block; padding:8px 20px; border-radius:20px; border:1px solid rgba(245,158,11,0.2);">
+                   ${student.full_name}
+                 </div>
+                 <div style="background: #fff; padding:20px; border-radius:18px; border:1px dashed #f59e0b; margin-bottom:15px; position:relative;">
+                   <p style="color:#6b7280; font-size:0.9rem; margin-bottom:5px;">رقم ترتيبك في قائمة الانتظار:</p>
+                   <div style="font-size:3.5rem; font-weight:800; color:#d97706; font-family:'Cairo', sans-serif; line-height:1;">${rank}</div>
+                 </div>
+                 <p style="color:#92400e; font-size:0.9rem; line-height:1.6; padding: 0 10px;">نعتذر لعدم وجود مقعد شاغر حالياً، وسيتم التواصل معك فور توفر مقعد بإذن الله.</p>
+               </div>`;
+           }
         }
       }
       inquiryResult.style.display = 'block';
     } catch (err) {
       console.error(err);
-      inquiryResult.innerHTML = `<div class="feedback-message feedback-error" style="display:block;">حدث خطأ أثناء الاستعلام. يرجى المحاولة لاحقاً.</div>`;
+      inquiryResult.innerHTML = `<div class="feedback-message feedback-error" style="display:block;">حدث خطأ في الاستعلام. حاول مرة أخرى.</div>`;
       inquiryResult.style.display = 'block';
     } finally {
       inquirySubmit.disabled = false;

@@ -666,12 +666,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const name       = document.getElementById('m-name').value.trim();
     const nationalId = document.getElementById('m-national-id').value.trim();
+    const parentNationalId = document.getElementById('m-parent-national-id').value.trim();
     const phone      = document.getElementById('m-phone').value.trim();
     const grade      = document.getElementById('m-grade').value;
     const classNum   = document.getElementById('m-class').value;
     const nationality= document.getElementById('m-nationality').value.trim() || 'سعودي';
 
-    if (!name || !nationalId || !phone || !grade || !classNum) {
+    if (!name || !nationalId || !phone || !grade || !classNum || !parentNationalId) {
       modalError.style.display = 'block';
       return;
     }
@@ -683,7 +684,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const { error } = await supabase.from('registrations').insert([{
         full_name:    name,
         national_id:  nationalId,
+        parent_national_id: parentNationalId,
         parent_phone: phone,
+        status:       'active', // Manual addition usually active
         grade:        grade,
         class_number: parseInt(classNum),
         nationality:  nationality,
