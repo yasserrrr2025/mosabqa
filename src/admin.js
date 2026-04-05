@@ -100,13 +100,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  function buildRoster(currentBatch) {
+  function buildRoster(batchNum) {
     const rosterGradeFilter = document.getElementById('roster-grade-filter');
     const rosterTableBody = document.getElementById('roster-table-body');
     if (!rosterGradeFilter || !rosterTableBody) return;
 
     // Filter to current batch only
-    const currentStudents = allStudents.filter(s => s.batch_number === currentBatch);
+    const currentStudents = allStudents.filter(s => s.batch_number === batchNum);
 
     // Sort by grade then class
     currentStudents.sort((a, b) => {
@@ -152,7 +152,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Store for print
     window._rosterStudents = currentStudents;
-    window._rosterBatch = currentBatch;
+    window._rosterBatch = batchNum;
   }
 
   window.printRoster = function() {
@@ -287,7 +287,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (filtered.length === 0) {
-      adminTableBody.innerHTML = '<tr><td colspan="5" style="text-align:center;">لا يوجد بيانات للعرض.</td></tr>';
+      adminTableBody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px; color:#999;">لا يوجد بيانات للعرض.</td></tr>';
       return;
     }
 
