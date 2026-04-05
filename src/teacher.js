@@ -503,6 +503,10 @@ document.addEventListener('DOMContentLoaded', () => {
       return alert('لا يوجد طلاب محملون للتصدير حالياً.');
     }
 
+    if (typeof XLSX === 'undefined') {
+       return alert('جاري تحميل المكتبة، يرجى المحاولة بعد لحظة.');
+    }
+
     const headers = [
       'رقم الهوية',
       'اسم الطالب',
@@ -518,8 +522,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const teacherInput = 'فهد علي آل رده';
     const circle = 'حلقة تحفيظ القرآن الكريم';
 
-    // Build Rows
-    const rows = window.currentStudents.map(s => [
+    // Prepare data
+    const dataRows = window.currentStudents.map(s => [
       s.national_id || '-',
       s.full_name || '-',
       s.nationality || 'سعودي',
@@ -530,34 +534,26 @@ document.addEventListener('DOMContentLoaded', () => {
       s.parent_national_id || '-'
     ]);
 
-    // Use BOM for Arabic support in Excel (CSV UTF-8 with BOM)
-    let csvContent = "\uFEFF"; 
+    // Create Worksheet
+    const worksheet = XLSX.utils.aoa_to_sheet([headers, ...dataRows]);
     
-    // Add Headers
-    csvContent += headers.map(h => `"${h}"`).join(",") + "\n";
+    // Set column widths 
+    const wscols = [
+      {wch: 15}, {wch: 35}, {wch: 12}, {wch: 15}, {wch: 22}, {wch: 20}, {wch: 30}, {wch: 15}
+    ];
+    worksheet['!cols'] = wscols;
 
-    // Add Data Rows
-    rows.forEach(row => {
-      const formatted = row.map(cell => `"${cell.toString().replace(/"/g, '""')}"`).join(",");
-      csvContent += formatted + "\n";
-    });
+    // Set Sheet to Right-to-Left
+    if(!worksheet['!views']) worksheet['!views'] = [{}];
+    worksheet['!views'][0].rtl = true;
 
-    try {
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      const filename = `تقرير_طلاب_الحلقة_${new Date().toISOString().split('T')[0]}.csv`;
-      
-      link.setAttribute("href", url);
-      link.setAttribute("download", filename);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-    } catch (e) {
-      console.error(e);
-      alert('حدث خطأ أثناء محاولة التصدير.');
-    }
+    // Create Workbook
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "تقرير الطلاب");
+
+    // Download
+    const filename = `تقرير_طلاب_الحلقة_${new Date().toISOString().split('T')[0]}.xlsx`;
+    XLSX.writeFile(workbook, filename);
   };
-});
+ });
 
