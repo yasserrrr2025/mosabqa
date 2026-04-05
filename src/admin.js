@@ -311,15 +311,19 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    // Sort by points to identify the best in the batch/school
-    // IMPORTANT: Waitlisted students don't appear in analytics/podium
+    // 1. Separate Active and Waitlisted
     const activeStudents = filtered.filter(s => s.status !== 'waitlisted');
+    const waitlistedStudents = filtered.filter(s => s.status === 'waitlisted');
     
+    // 2. Sort Active by Points
     activeStudents.sort((a, b) => {
       const scoreA = allScores[a.id] || 0;
       const scoreB = allScores[b.id] || 0;
       return scoreB - scoreA;
     });
+
+    // 3. Sort Waitlist by Registration Date (Oldest First)
+    waitlistedStudents.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
 
     // ========== Analytics: Podium & Best Batch ==========
     if(podiumContainer) {
@@ -378,9 +382,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     // ===============================================
 
+    // Render Active Students
     let rank = 1;
-    filtered.forEach(student => {
-      const isWaitlist = student.status === 'waitlisted';
+    activeStudents.forEach(student => {
       const score = allScores[student.id] || 0;
       let finalEval = 'جيد وحافظ';
       if(score > 60) finalEval = 'متميز ومتقن لحفظه';
@@ -388,37 +392,31 @@ document.addEventListener('DOMContentLoaded', () => {
       else if(score === 0) finalEval = 'لم يستكمل التقييم';
       
       const tr = document.createElement('tr');
-      if(isWaitlist) tr.style.background = '#fffbeb';
+      const dateObj = new Date(student.created_at);
+      const formattedDate = dateObj.toLocaleDateString('ar-SA', { day: '2-digit', month: '2-digit' });
+      const formattedTime = dateObj.toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit', hour12: true });
       
       tr.innerHTML = `
         <td>
-           <strong>${rank}- ${student.full_name}</strong>
-           ${isWaitlist ? '<span style="background:#fde68a; color:#b45309; font-size:0.7rem; padding:2px 6px; border-radius:4px; margin-right:5px;">⏳ احتياط</span>' : ''}
-           <br>
+           <strong>${rank}- ${student.full_name}</strong><br>
            <span style="font-size:0.85rem; color:#666;">${student.grade} - فصل ${student.class_number}</span>
         </td>
-        <td>${student.national_id}</td>
-        <td dir="ltr" style="text-align:right;">${student.parent_phone}</td>
+        <td style="text-align:center;">${student.national_id}</td>
+        <td dir="ltr" style="text-align:center;">${student.parent_phone}</td>
+        <td style="text-align:center;">
+           <div style="font-size:0.85rem; font-weight:bold;">${formattedDate}</div>
+           <div style="font-size:0.75rem; color:#666;">${formattedTime}</div>
+        </td>
         <td style="font-weight:bold; color:var(--color-primary-dark); text-align:center; font-size:1.1rem;">${student.batch_number}</td>
         <td style="text-align:center;">
-           ${isWaitlist ? '<span style="color:#b45309; font-style:italic; font-size:0.85rem;">قائمة الانتظار</span>' : `
-             <span style="display:block; font-weight:bold; color:var(--color-gold-dark);">${score} نقطة</span>
-             <span style="font-size:0.9rem;">${finalEval}</span>
-           `}
+           <span style="display:block; font-weight:bold; color:var(--color-gold-dark);">${score} نقطة</span>
+           <span style="font-size:0.9rem;">${finalEval}</span>
         </td>
         <td style="text-align:center; padding:6px; vertical-align:middle;">
-          <div style="display:flex; flex-direction:column; gap:5px; align-items:center;">
-            ${isWaitlist ? `
-              <button class="promote-btn" data-id="${student.id}"
-                style="background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;border:none;padding:5px 12px;border-radius:6px;font-size:0.75rem;cursor:pointer;font-weight:700;font-family:inherit;width:100%;">
-                ✅ ترقية لأساسي
-              </button>
-            ` : ''}
-            <button class="del-btn" data-id="${student.id}"
-              style="background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;border:none;padding:5px 12px;border-radius:6px;font-size:0.75rem;cursor:pointer;font-weight:700;font-family:inherit;width:100%;">
-              🗑️ حذف
-            </button>
-          </div>
+          <button class="del-btn" data-id="${student.id}"
+            style="background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;border:none;padding:7px 14px;border-radius:8px;font-size:0.85rem;cursor:pointer;font-weight:700;font-family:inherit;white-space:nowrap;display:inline-block;">
+            🗑️ حذف
+          </button>
         </td>
       `;
       
@@ -467,20 +465,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ===== DELETE STUDENT =====
   async function deleteStudent(id, name) {
-    if (!confirm(`هل تريد حذف الطالب "${name}" بشكل نهائي؟\nسيتم حذف جميع تقييماته أيضاً.`)) return;
+    if (!confirm(`هل تريد حذف الطالب "${name}" بشكل نهائي؟`)) return;
     try {
-      // Check if student was active
+      // Get current status/batch for promotion check
       const { data: stdData } = await supabase.from('registrations').select('status, batch_number').eq('id', id).single();
       const wasActive = stdData && stdData.status === 'active';
       const batchNum = stdData ? stdData.batch_number : null;
 
-      // Delete evaluations first
-      await supabase.from('evaluations').delete().eq('student_id', id);
-      // Delete student
+      // Delete student (Database will automatically delete evaluations via CASCADE)
       const { error } = await supabase.from('registrations').delete().eq('id', id);
       if (error) throw error;
 
-      // If we deleted an active student, offer to promote the first waitlisted student
+      // Automatically offer to promote from waitlist if an active student was removed
       if (wasActive && batchNum) {
           const { data: waitlisted } = await supabase
             .from('registrations')
