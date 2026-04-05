@@ -325,8 +325,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const { error: upError } = await supabase.from('registrations').update({ parent_national_id: pid }).eq('id', student.id);
                 if (upError) { alert('حدث خطأ أثناء الحفظ.'); return; }
                 
-                // Crucial: Clear result and re-run search with the ORIGINAL student ID
-                performInquiry(student.national_id);
+                // If active, go to parent portal directly
+                if (student.status === 'active' || student.status === 'accepted') {
+                   window.location.href = `/parent.html?id=${student.national_id}`;
+                } else {
+                   // Otherwise refresh inquiry to show waitlist status
+                   performInquiry(student.national_id);
+                }
              };
            } 
            else if (student.status === 'active' || student.status === 'accepted') {
