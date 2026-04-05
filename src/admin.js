@@ -376,8 +376,8 @@ document.addEventListener('DOMContentLoaded', () => {
            <span style="display:block; font-weight:bold; color:var(--color-gold-dark);">${score} نقطة</span>
            <span style="font-size:0.9rem;">${finalEval}</span>
         </td>
-        <td class="no-print" style="text-align:center;">
-          <button class="del-btn" data-id="${student.id}" data-name="${student.full_name}">🗑️ حذف</button>
+        <td class="del-col" style="text-align:center;">
+          <button class="del-btn" data-id="${student.id}">🗑️ حذف</button>
         </td>
       `;
       // Delete handler

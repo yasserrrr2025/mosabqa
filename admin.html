@@ -161,7 +161,9 @@
       .danger-btn { background: linear-gradient(135deg, #dc2626, #b91c1c) !important; }
       .danger-btn:hover { background: linear-gradient(135deg, #b91c1c, #991b1b) !important; }
 
-      /* ============= Green Button ============= */
+      /* ============= Delete Column ============= */
+      .del-col { display: table-cell; }
+      @media print { .del-col { display: none !important; } }
       .btn-green { background: linear-gradient(135deg, #16a34a, #15803d); color: #fff; }
       .btn-green:hover { box-shadow: 0 8px 20px rgba(22,163,74,0.35); }
 
@@ -359,7 +361,7 @@
                   <th width="14%">رقم الجوال</th>
                   <th width="9%">رقم الدفعة</th>
                   <th width="27%">التقييم والنقاط</th>
-                  <th width="8%" class="no-print">إجراءات</th>
+                  <th width="8%" class="del-col">إجراءات</th>
                 </tr>
               </thead>
               <tbody id="admin-table-body">
