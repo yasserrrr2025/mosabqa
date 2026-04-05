@@ -95,8 +95,8 @@ document.addEventListener('DOMContentLoaded', () => {
       buildRoster(settingsData ? settingsData.current_batch : null);
 
     } catch(err) {
-      console.error(err);
-      alert('فشل في تحميل الإعدادات وبيانات الأرشيف.');
+      console.error('تحذير من لوحة الإدارة:', err);
+      alert('خطأ تقني عند تحميل البيانات: ' + (err.message || 'خطأ غير معروف'));
     }
   }
 
