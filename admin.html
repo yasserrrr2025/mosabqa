@@ -222,19 +222,55 @@
       .modal-actions button { flex: 1; }
       #modal-error { color: #dc2626; font-size: 0.88rem; margin-top: 8px; display: none; font-weight: 600; }
 
-      /* ============= Responsive ============= */
-      @media (max-width: 768px) {
-        .stats-grid { grid-template-columns: repeat(2, 1fr); }
-        .controls-bar { padding: 12px; }
-        .action-btn { font-size: 0.85rem; padding: 9px 13px; }
-        .students-table th, .students-table td { padding: 9px 8px; font-size: 0.85rem; }
+      /* ============= Responsive & Modern Updates ============= */
+      .app-container { transition: all 0.3s; padding: 10px; }
+      @media (min-width: 1200px) { .admin-card { max-width: 1280px; } }
+      
+      /* Grid adjustments */
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
       }
-      @media (max-width: 480px) {
-        .stats-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+      
+      /* Better table scrolling on mobile */
+      .table-wrapper {
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        margin-bottom: 20px;
+        background: #fff;
+      }
+      .students-table { min-width: 800px; width: 100%; } /* Prevent squishing */
+      
+      /* Controls responsiveness */
+      .controls-bar {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        gap: 15px;
+        padding: 20px;
+      }
+      
+      @media (max-width: 950px) {
+        .controls-bar { flex-direction: column; align-items: stretch; text-align: center; }
+        .controls-bar div { justify-content: center; width: 100%; }
+        .action-select { width: 100%; }
+        .btn-group { justify-content: center; }
+      }
+      
+      @media (max-width: 600px) {
+        .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+        .capacity-card { grid-column: span 2; }
         .dashboard-stat h3 { font-size: 1.6rem; }
-        .btn-group { justify-content: stretch; }
-        .action-btn { flex: 1; justify-content: center; }
-        .roster-controls { flex-direction: column; }
+        .action-btn { width: 100%; justify-content: center; padding: 12px; }
+        .modal-box { padding: 25px 15px; width: 95%; margin: 10px; }
+        .modal-grid { grid-template-columns: 1fr; }
+        .roster-controls { flex-direction: column; align-items: stretch; }
       }
 
       /* ============= Print ============= */
@@ -361,7 +397,7 @@
                   <th width="14%">رقم الجوال</th>
                   <th width="9%">رقم الدفعة</th>
                   <th width="27%">التقييم والنقاط</th>
-                  <th width="8%" class="del-col">إجراءات</th>
+                  <th width="8%" style="text-align:center;">إجراءات</th>
                 </tr>
               </thead>
               <tbody id="admin-table-body">
@@ -396,12 +432,13 @@
             <div class="table-wrapper">
               <table id="roster-preview-table" class="students-table" style="font-size:0.95rem;">
                 <thead><tr>
-                  <th style="width:60%">اسم الطالب</th>
+                  <th style="width:45%">اسم الطالب</th>
                   <th style="width:20%">الصف</th>
-                  <th style="width:20%">الفصل</th>
+                  <th style="width:15%">الفصل</th>
+                  <th style="width:20%; text-align:center;">إجراءات</th>
                 </tr></thead>
                 <tbody id="roster-table-body">
-                  <tr><td colspan="3" style="text-align:center; color:#999; padding:20px;">جاري تحميل البيانات...</td></tr>
+                  <tr><td colspan="4" style="text-align:center; color:#999; padding:20px;">جاري تحميل البيانات...</td></tr>
                 </tbody>
               </table>
             </div>

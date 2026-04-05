@@ -130,16 +130,36 @@ document.addEventListener('DOMContentLoaded', () => {
       const filtered = filter === 'all' ? currentStudents : currentStudents.filter(s => s.grade === filter);
       rosterTableBody.innerHTML = '';
       if (filtered.length === 0) {
-        rosterTableBody.innerHTML = '<tr><td colspan="3" style="text-align:center; color:#999;">لا يوجد بيانات لهذا الفلتر</td></tr>';
+        rosterTableBody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#999;">لا يوجد بيانات لهذا الفلتر</td></tr>';
         return;
       }
       filtered.forEach((s, i) => {
+        const isWaitlist = s.status === 'waitlisted';
         const tr = document.createElement('tr');
+        if(isWaitlist) tr.style.background = '#fffbeb';
+        
         tr.innerHTML = `
-          <td><strong>${i + 1}- ${s.full_name}</strong></td>
+          <td>
+            <strong>${i + 1}- ${s.full_name}</strong>
+            ${isWaitlist ? '<br><span style="background:#fde68a; color:#b45309; font-size:0.7rem; padding:2px 5px; border-radius:4px;">⏳ احتياط</span>' : ''}
+          </td>
           <td style="text-align:center;">${s.grade || '-'}</td>
           <td style="text-align:center;">${s.class_number || '-'}</td>
+          <td style="text-align:center; padding:5px;">
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              ${isWaitlist ? `
+                <button class="promote-btn" style="background:#16a34a;color:#fff;border:none;padding:4px 8px;border-radius:4px;font-size:0.75rem;cursor:pointer;font-weight:700;">✅ ترقية</button>
+              ` : ''}
+              <button class="del-btn" style="background:#dc2626;color:#fff;border:none;padding:4px 8px;border-radius:4px;font-size:0.75rem;cursor:pointer;font-weight:700;">🗑️ حذف</button>
+            </div>
+          </td>
         `;
+
+        if(isWaitlist) {
+            tr.querySelector('.promote-btn').addEventListener('click', () => promoteStudent(s.id, s.full_name));
+        }
+        tr.querySelector('.del-btn').addEventListener('click', () => deleteStudent(s.id, s.full_name));
+        
         rosterTableBody.appendChild(tr);
       });
     };
@@ -292,7 +312,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Sort by points to identify the best in the batch/school
-    filtered.sort((a, b) => {
+    // IMPORTANT: Waitlisted students don't appear in analytics/podium
+    const activeStudents = filtered.filter(s => s.status !== 'waitlisted');
+    
+    activeStudents.sort((a, b) => {
       const scoreA = allScores[a.id] || 0;
       const scoreB = allScores[b.id] || 0;
       return scoreB - scoreA;
@@ -306,7 +329,7 @@ document.addEventListener('DOMContentLoaded', () => {
        podiumContainer.style.minHeight = '80px';
        podiumContainer.style.alignItems = 'stretch';
 
-       const top3 = filtered.slice(0, 3);
+       const top3 = activeStudents.slice(0, 3);
        const medals = ['🥇', '🥈', '🥉'];
        const labels = ['المركز الأول', 'المركز الثاني', 'المركز الثالث'];
        const colors = ['#f59e0b', '#9ca3af', '#b45309'];
@@ -357,6 +380,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let rank = 1;
     filtered.forEach(student => {
+      const isWaitlist = student.status === 'waitlisted';
       const score = allScores[student.id] || 0;
       let finalEval = 'جيد وحافظ';
       if(score > 60) finalEval = 'متميز ومتقن لحفظه';
@@ -364,24 +388,46 @@ document.addEventListener('DOMContentLoaded', () => {
       else if(score === 0) finalEval = 'لم يستكمل التقييم';
       
       const tr = document.createElement('tr');
+      if(isWaitlist) tr.style.background = '#fffbeb';
+      
       tr.innerHTML = `
         <td>
-           <strong>${rank}- ${student.full_name}</strong><br>
+           <strong>${rank}- ${student.full_name}</strong>
+           ${isWaitlist ? '<span style="background:#fde68a; color:#b45309; font-size:0.7rem; padding:2px 6px; border-radius:4px; margin-right:5px;">⏳ احتياط</span>' : ''}
+           <br>
            <span style="font-size:0.85rem; color:#666;">${student.grade} - فصل ${student.class_number}</span>
         </td>
         <td>${student.national_id}</td>
         <td dir="ltr" style="text-align:right;">${student.parent_phone}</td>
         <td style="font-weight:bold; color:var(--color-primary-dark); text-align:center; font-size:1.1rem;">${student.batch_number}</td>
         <td style="text-align:center;">
-           <span style="display:block; font-weight:bold; color:var(--color-gold-dark);">${score} نقطة</span>
-           <span style="font-size:0.9rem;">${finalEval}</span>
+           ${isWaitlist ? '<span style="color:#b45309; font-style:italic; font-size:0.85rem;">قائمة الانتظار</span>' : `
+             <span style="display:block; font-weight:bold; color:var(--color-gold-dark);">${score} نقطة</span>
+             <span style="font-size:0.9rem;">${finalEval}</span>
+           `}
         </td>
-        <td class="del-col" style="text-align:center;">
-          <button class="del-btn" data-id="${student.id}">🗑️ حذف</button>
+        <td style="text-align:center; padding:6px; vertical-align:middle;">
+          <div style="display:flex; flex-direction:column; gap:5px; align-items:center;">
+            ${isWaitlist ? `
+              <button class="promote-btn" data-id="${student.id}"
+                style="background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;border:none;padding:5px 12px;border-radius:6px;font-size:0.75rem;cursor:pointer;font-weight:700;font-family:inherit;width:100%;">
+                ✅ ترقية لأساسي
+              </button>
+            ` : ''}
+            <button class="del-btn" data-id="${student.id}"
+              style="background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;border:none;padding:5px 12px;border-radius:6px;font-size:0.75rem;cursor:pointer;font-weight:700;font-family:inherit;width:100%;">
+              🗑️ حذف
+            </button>
+          </div>
         </td>
       `;
-      // Delete handler
+      
+      // Handlers
+      if(isWaitlist) {
+          tr.querySelector('.promote-btn').addEventListener('click', () => promoteStudent(student.id, student.full_name));
+      }
       tr.querySelector('.del-btn').addEventListener('click', () => deleteStudent(student.id, student.full_name));
+      
       adminTableBody.appendChild(tr);
       rank++;
     });
@@ -423,16 +469,56 @@ document.addEventListener('DOMContentLoaded', () => {
   async function deleteStudent(id, name) {
     if (!confirm(`هل تريد حذف الطالب "${name}" بشكل نهائي؟\nسيتم حذف جميع تقييماته أيضاً.`)) return;
     try {
+      // Check if student was active
+      const { data: stdData } = await supabase.from('registrations').select('status, batch_number').eq('id', id).single();
+      const wasActive = stdData && stdData.status === 'active';
+      const batchNum = stdData ? stdData.batch_number : null;
+
       // Delete evaluations first
       await supabase.from('evaluations').delete().eq('student_id', id);
       // Delete student
       const { error } = await supabase.from('registrations').delete().eq('id', id);
       if (error) throw error;
+
+      // If we deleted an active student, offer to promote the first waitlisted student
+      if (wasActive && batchNum) {
+          const { data: waitlisted } = await supabase
+            .from('registrations')
+            .select('*')
+            .eq('batch_number', batchNum)
+            .eq('status', 'waitlisted')
+            .order('created_at', { ascending: true })
+            .limit(1);
+
+          if (waitlisted && waitlisted.length > 0) {
+              const nextStudent = waitlisted[0];
+              if (confirm(`تم إفراغ مقعد! هل تريد ترقية الطالب "${nextStudent.full_name}" من قائمة الاحتياط تلقائياً؟`)) {
+                  await promoteStudent(nextStudent.id, nextStudent.full_name);
+              }
+          }
+      }
+
       await loadAdminDashboard();
     } catch(err) {
       console.error(err);
       alert('حدث خطأ أثناء الحذف: ' + err.message);
     }
+  }
+
+  async function promoteStudent(id, name) {
+      try {
+          const { error } = await supabase
+            .from('registrations')
+            .update({ status: 'active' })
+            .eq('id', id);
+          
+          if (error) throw error;
+          alert(`تمت ترقية الطالب "${name}" ليكون طالباً أساسياً بنجاح!`);
+          await loadAdminDashboard();
+      } catch(err) {
+          console.error(err);
+          alert('خطأ في الترقية: ' + err.message);
+      }
   }
 
   // ===== ADD STUDENT MODAL =====

@@ -41,7 +41,8 @@ document.addEventListener('DOMContentLoaded', () => {
       // 2. Load students for current batch
       const { data: students, error } = await supabase
         .from('registrations')
-        .select('*'); 
+        .select('*')
+        .eq('status', 'active'); 
       
       if (error) throw error;
 

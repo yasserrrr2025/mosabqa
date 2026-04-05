@@ -35,6 +35,12 @@
             تحديث مباشر: <strong id="registered-count">0</strong> / 25 مسجل
           </div>
 
+          <div id="waitlist-banner" style="display:none; background: #fffbeb; color: #b45309; padding: 12px; border-radius: 12px; border: 1.5px solid #fde68a; margin-bottom: 20px; text-align: center; font-size: 0.95rem; line-height: 1.6; box-shadow: 0 4px 12px rgba(245,158,11,0.1);">
+            <div style="font-size: 1.4rem; margin-bottom: 5px;">⏳</div>
+            <strong>العدد الأساسي مكتمل!</strong><br>
+            تسجيلك الآن سيكون في <strong>"قائمة الاحتياط"</strong>.<br>سنتواصل معك في حال توفر مقعد شاغر بإذن الله.
+          </div>
+
           <form id="sebaq-form">
             <div class="form-group">
               <label for="fullName">اسم الطالب رباعي <span class="required">*</span></label>
@@ -109,7 +115,7 @@
           <div class="icon-wrapper" style="box-shadow: 0 0 20px var(--color-success); background: rgba(22, 163, 74, 0.1); animation: pulseGreen 2.5s infinite;">
             <svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
           </div>
-          <h2 style="color: var(--color-success);">تم التسجيل بنجاح!</h2>
+          <h2 id="success-title" style="color: var(--color-success);">تم التسجيل بنجاح!</h2>
           <p id="success-student-name" style="font-size: 1.2rem; font-weight: bold; margin-bottom: 20px; color: var(--color-primary-dark);"></p>
           <button onclick="location.reload()" class="submit-btn" style="background: var(--color-success); box-shadow: none;">تسجيل طالب جديد</button>
         </div>

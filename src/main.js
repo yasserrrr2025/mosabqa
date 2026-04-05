@@ -55,22 +55,36 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     try {
-      // Re-check count before inserting
-      const isFull = await checkRegistrationStatus(false);
-      if (isFull) {
-         resetBtn();
-         return; // UI already updated by checkRegistrationStatus
+      // Re-get settings to ensure we have current capacity and batch
+      const { data: settingsData } = await supabase.from('settings').select('*').single();
+      const currentBatch = settingsData ? settingsData.current_batch : 1;
+      const maxCapacity = settingsData && settingsData.max_capacity ? settingsData.max_capacity : 25;
+      const forceOpen = settingsData ? settingsData.is_registration_open : true;
+
+      if (!forceOpen) {
+          showFeedback('عذراً، التسجيل مغلق حالياً بقرار من الإدارة.', 'error');
+          resetBtn();
+          return;
       }
 
+      // Check current active count
+      const { count } = await supabase
+        .from('registrations')
+        .select('*', { count: 'exact', head: true })
+        .eq('batch_number', currentBatch)
+        .eq('status', 'active');
+
+      const isWaitlist = count >= maxCapacity;
+      const registrationStatus = isWaitlist ? 'waitlisted' : 'active';
+
       // Insert data
-      const currentBatch = parseInt(form.dataset.batch) || 1;
       const { error } = await supabase
         .from('registrations')
-        .insert([{ ...data, batch_number: currentBatch }]);
+        .insert([{ ...data, batch_number: currentBatch, status: registrationStatus }]);
 
       if (error) {
-        if (error.code === '23505') {
-          showFeedback('عذراً، لا يمكن تكرار التسجيل! (هذا الطالب أو رقم الجوال مسجل مسبقاً).', 'error');
+        if (error.code === '23505' || error.message?.includes('unique_national_id')) {
+          showFeedback('عذراً، هذا الرقم المدني مسجل مسبقاً في الدفعة الحالية.', 'error');
           return;
         }
         throw error;
@@ -78,18 +92,24 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       // Success
       document.getElementById('registration-form-container').style.display = 'none';
-      document.getElementById('success-student-name').textContent = `بشرى سارة! تم تسجيل الطالب "${data.full_name}" بنجاح.. شكراً لثقتكم.`;
-      document.getElementById('success-container').style.display = 'block';
+      const successTitle = document.getElementById('success-title');
+      const successMsg = document.getElementById('success-student-name');
       
-      // تحديث العداد رقمياً فقط دون إعادة رسم الفورم لكي لا تختفي رسالة النجاح
-      const currentCountEl = document.getElementById('registered-count');
-      if (currentCountEl) {
-        currentCountEl.textContent = parseInt(currentCountEl.textContent || '0') + 1;
+      if (isWaitlist) {
+          successTitle.textContent = 'تم الإضافة لقائمة الاحتياط ⏳';
+          successTitle.style.color = '#b45309'; // Amber/Gold
+          successMsg.textContent = `تم تسجيل الطالب "${data.full_name}" في قائمة الاحتياط بنجاح. سنقوم بالتواصل معكم في حال توفر مقعد شاغر.`;
+      } else {
+          successTitle.textContent = 'تم التسجيل بنجاح! ✅';
+          successTitle.style.color = 'var(--color-success)';
+          successMsg.textContent = `بشرى سارة! تم تسجيل الطالب "${data.full_name}" بنجاح.. شكراً لثقتكم.`;
       }
+      
+      document.getElementById('success-container').style.display = 'block';
 
     } catch (error) {
       console.error("Submission error:", error);
-      showFeedback('حدث خطأ أثناء التسجيل. قد يكون هناك مشكلة في الاتصال.', 'error');
+      showFeedback('حدث خطأ أثناء التسجيل. يرجى المحاولة مرة أخرى.', 'error');
     } finally {
       resetBtn();
     }
@@ -124,21 +144,12 @@ document.addEventListener('DOMContentLoaded', async () => {
       const { count, error } = await supabase
         .from('registrations')
         .select('*', { count: 'exact', head: true })
-        .eq('batch_number', currentBatch);
+        .eq('batch_number', currentBatch)
+        .eq('status', 'active');
 
       if (error) throw error;
 
-      if (count >= maxCapacity) {
-        if (initialLoad) {
-          loadingScreen.style.display = 'none';
-          mainContent.style.display = 'block';
-        }
-        if(registeredCountEl) registeredCountEl.textContent = count;
-        document.getElementById('counter-badge').innerHTML = `تحديث مباشر: <strong>${count}</strong> / ${maxCapacity} مسجل`;
-        formContainer.style.display = 'none';
-        limitReachedContainer.style.display = 'block';
-        return true;
-      }
+      return handleStatusUpdate(count || 0, maxCapacity, initialLoad);
 
       return handleStatusUpdate(count || 0, maxCapacity, initialLoad);
     } catch (error) {
@@ -157,14 +168,12 @@ document.addEventListener('DOMContentLoaded', async () => {
       mainContent.style.display = 'block';
     }
 
-    // Secondary fallback check just in case
+    const waitlistBanner = document.getElementById('waitlist-banner');
     if (count >= maxCapacity) {
-      formContainer.style.display = 'none';
-      limitReachedContainer.style.display = 'block';
+      waitlistBanner.style.display = 'block';
       return true; // is full
     } else {
-      formContainer.style.display = 'block';
-      limitReachedContainer.style.display = 'none';
+      waitlistBanner.style.display = 'none';
       return false; // not full
     }
   }
