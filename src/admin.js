@@ -63,6 +63,12 @@ document.addEventListener('DOMContentLoaded', () => {
       
       allStudents = stds || [];
       totalStudentsDisplay.textContent = allStudents.length;
+      
+      const totalActiveEl = document.getElementById('stat-total-active');
+      const totalWaitlistEl = document.getElementById('stat-total-waitlist');
+      
+      if(totalActiveEl) totalActiveEl.textContent = allStudents.filter(s => s.status === 'active').length;
+      if(totalWaitlistEl) totalWaitlistEl.textContent = allStudents.filter(s => s.status === 'waitlisted').length;
 
       // 3. Populate Filter Dropdown
       const batches = [...new Set(allStudents.map(s => s.batch_number))].sort((a,b) => a-b);
@@ -211,7 +217,10 @@ document.addEventListener('DOMContentLoaded', () => {
           tr.innerHTML = `
             <td style="text-align:center;"><span style="background:var(--color-gold); color:#fff; font-weight:bold; padding:2px 10px; border-radius:8px;">${i + 1}</span></td>
             <td><strong>${s.full_name}</strong></td>
-            <td style="text-align:center; font-size:0.8rem;">${new Date(s.created_at).toLocaleTimeString('ar-SA', {hour:'2-digit', minute:'2-digit'})}</td>
+            <td style="text-align:center;">
+               <div style="font-size:0.85rem; font-weight:bold;">${new Date(s.created_at).toLocaleDateString('ar-SA', {day:'2-digit', month:'2-digit'})}</div>
+               <div style="font-size:0.75rem; color:#666;">${new Date(s.created_at).toLocaleTimeString('ar-SA', {hour:'2-digit', minute:'2-digit'})}</div>
+            </td>
             <td style="text-align:center;">${s.grade || '-'} - ${s.class_number || '-'}</td>
             <td style="text-align:center;">
               <button class="promote-btn" style="background:#16a34a;color:#fff;border:none;padding:5px 12px;border-radius:6px;font-size:0.8rem;cursor:pointer;font-weight:700;">✅ ترقية</button>
