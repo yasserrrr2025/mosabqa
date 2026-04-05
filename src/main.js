@@ -309,47 +309,46 @@ document.addEventListener('DOMContentLoaded', async () => {
            });
         } else {
            const student = students[0];
-           // Single result logic
-           if (student.status === 'active') {
-              // Redirect or Prompt for missing parent ID
-              if (!student.parent_national_id) {
-                inquiryResult.innerHTML = `
-                  <div style="background:#fff7ed; border:2.5px dashed #fcd34d; padding:25px; border-radius:20px; text-align:center; animation: bounceIn 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);">
-                    <div style="font-size:3rem; margin-bottom:10px;">⚠️</div>
-                    <h3 style="color:#92400e; font-family:'Amiri', serif; font-size:1.5rem; margin-bottom:5px;">بيانات الحساب غير مكتملة</h3>
-                    <p style="color:#b45309; font-size:0.9rem; margin-bottom:20px;">مرحباً بك يا <strong>${student.full_name}</strong>. نعتذر، يجب تزويدنا برقم هوية ولي الأمر لإتمام ربط حسابك بالتقارير الرسمية.</p>
-                    <input type="text" id="new-parent-id" placeholder="أدخل رقم هوية ولي الأمر (10 أرقام)" style="width:100%; padding:12px; border-radius:10px; border:1.5px solid #fcd34d; margin-bottom:15px; text-align:center; font-family:inherit;" maxlength="10">
-                    <button id="save-parent-id-btn" class="submit-btn" style="background:#d97706;">💾 حفظ البيانات وفتح التقارير</button>
-                    <div id="save-error" style="color:#dc2626; font-size:0.8rem; margin-top:8px; display:none;">يرجى إدخال 10 أرقام صحيحة</div>
-                  </div>`;
+           
+           // Mandatory Global Check for Parent ID (Force both active and waitlist)
+           if (!student.parent_national_id) {
+             inquiryResult.innerHTML = `
+               <div style="background:#fff7ed; border:2.5px dashed #fcd34d; padding:25px; border-radius:20px; text-align:center; animation: bounceIn 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);">
+                 <div style="font-size:3rem; margin-bottom:10px;">⚠️</div>
+                 <h3 style="color:#92400e; font-family:'Amiri', serif; font-size:1.5rem; margin-bottom:5px;">إكمال البيانات مطلوب</h3>
+                 <p style="color:#b45309; font-size:0.9rem; margin-bottom:20px;">مرحباً بك يا <strong>${student.full_name}</strong>. نعتذر، يجب تزويدنا برقم هوية ولي الأمر لإتمام ربط حسابك بالخدمات المتاحة حالياً.</p>
+                 <input type="text" id="new-parent-id" placeholder="أدخل رقم هوية ولي الأمر (10 أرقام)" style="width:100%; padding:12px; border-radius:10px; border:1.5px solid #fcd34d; margin-bottom:15px; text-align:center; font-family:inherit;" maxlength="10">
+                 <button id="save-parent-id-btn" class="submit-btn" style="background:#d97706;">💾 حفظ البيانات والمتابعة</button>
+                 <div id="save-error" style="color:#dc2626; font-size:0.8rem; margin-top:8px; display:none;">يرجى إدخال 10 أرقام صحيحة</div>
+               </div>`;
+             
+             document.getElementById('save-parent-id-btn').onclick = async () => {
+                const pid = document.getElementById('new-parent-id').value.trim();
+                if (pid.length !== 10) { document.getElementById('save-error').style.display='block'; return; }
                 
-                document.getElementById('save-parent-id-btn').onclick = async () => {
-                   const pid = document.getElementById('new-parent-id').value.trim();
-                   if (pid.length !== 10) { document.getElementById('save-error').style.display='block'; return; }
-                   
-                   document.getElementById('save-parent-id-btn').disabled = true;
-                   document.getElementById('save-parent-id-btn').textContent = '⏳ جاري الحفظ...';
+                document.getElementById('save-parent-id-btn').disabled = true;
+                document.getElementById('save-parent-id-btn').textContent = '⏳ جاري الحفظ...';
 
-                   const { error: upError } = await supabase
-                     .from('registrations')
-                     .update({ parent_national_id: pid })
-                     .eq('id', student.id);
-                   
-                   if (upError) { alert('خطأ في الحفظ، يرجى المحاولة لاحقاً'); return; }
-                   window.location.href = `/parent.html?id=${student.national_id}`;
-                };
-              } else {
-                inquiryResult.innerHTML = `
-                  <div style="background:#f0fdf4; border:2px solid #bbfcce; padding:30px; border-radius:20px; text-align:center; animation: fadeIn 0.5s ease-out;">
-                    <div class="loader" style="margin: 0 auto 15px; width: 40px; height: 40px;"></div>
-                    <h3 style="color:#16a34a; font-family:'Amiri', serif; font-size:1.6rem; margin-bottom:10px;">تم العثور على الطالب 🎉</h3>
-                    <p style="color:#15803d; margin-bottom:5px; font-weight:bold;">مرحباً بك، ${student.full_name}</p>
-                    <p style="color:#15803d; font-size:0.9rem;">جاري تحويلك الآن إلى بوابة ولي الأمر للاطلاع على كامل التقارير...</p>
-                  </div>`;
-                setTimeout(() => window.location.href = `/parent.html?id=${student.national_id}`, 1800);
-              }
+                const { error: upError } = await supabase
+                  .from('registrations')
+                  .update({ parent_national_id: pid })
+                  .eq('id', student.id);
+                
+                if (upError) { alert('حدث خطأ أثناء الحفظ.'); return; }
+                inquirySubmit.click(); // Re-trigger search to show actual status
+             };
+           } 
+           else if (student.status === 'active') {
+              inquiryResult.innerHTML = `
+                <div style="background:#f0fdf4; border:2px solid #bbfcce; padding:30px; border-radius:20px; text-align:center; animation: fadeIn 0.5s ease-out;">
+                  <div class="loader" style="margin: 0 auto 15px; width: 40px; height: 40px;"></div>
+                  <h3 style="color:#16a34a; font-family:'Amiri', serif; font-size:1.6rem; margin-bottom:10px;">تم العثور على الطالب 🎉</h3>
+                  <p style="color:#15803d; margin-bottom:5px; font-weight:bold;">مرحباً بك، ${student.full_name}</p>
+                  <p style="color:#15803d; font-size:0.9rem;">جاري تحويلك الآن إلى بوابة ولي الأمر للاطلاع على التقارير والنتائج...</p>
+                </div>`;
+              setTimeout(() => window.location.href = `/parent.html?id=${student.national_id}`, 1800);
            } else {
-             // Waitlist Card (Keep original logic but updated for single/multi)
+             // Waitlisted result
              const { count: rank } = await supabase
                .from('registrations')
                .select('*', { count: 'exact', head: true })
