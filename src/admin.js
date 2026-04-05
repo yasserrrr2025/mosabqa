@@ -448,10 +448,12 @@ document.addEventListener('DOMContentLoaded', () => {
     addStudentForm.reset();
     document.getElementById('m-nationality').value = 'سعودي';
     modalError.style.display = 'none';
-    modal.classList.add('active');
+    modal.style.display = 'flex';
     document.getElementById('m-name').focus();
   }
-  function closeModal() { modal.classList.remove('active'); }
+  function closeModal() {
+    modal.style.display = 'none';
+  }
 
   if (addStudentBtn) addStudentBtn.addEventListener('click', openModal);
   if (modalCloseBtn)  modalCloseBtn.addEventListener('click',  closeModal);
