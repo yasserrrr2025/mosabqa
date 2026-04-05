@@ -703,21 +703,22 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   window.printAdminArchive = function() {
-    if (!allStudents || allStudents.length === 0) return alert('لا يوجد بيانات للطباعة.');
+    if (!allStudents || allStudents.length === 0) return alert('لا يوجد مسجلين للطباعة.');
     const filterEl = document.getElementById('batch-filter');
     const filterVal = filterEl ? filterEl.value : 'all';
     const filterLabel = filterVal === 'all' ? 'السجل التاريخي الشامل' : ('دفعة ' + filterVal);
     const today = new Date().toLocaleDateString('ar-SA-u-nu-latn');
 
-    // Build rows from data (not DOM innerHTML) to avoid CSS variable issues
-    let filtered = allStudents;
+    let filtered = allStudents.filter(s => s.status !== 'waitlisted');
     if (filterVal !== 'all') {
       const bn = parseInt(filterVal);
-      filtered = allStudents.filter(function(s) { return s.batch_number === bn; });
+      filtered = filtered.filter(function(s) { return s.batch_number === bn; });
     }
     filtered = filtered.slice().sort(function(a, b) {
       return ((allScores[b.id]||0) - (allScores[a.id]||0));
     });
+
+    if (filtered.length === 0) return alert('لا يوجد طلاب أساسيين في هذا الفلتر.');
 
     const rowsArr = filtered.map(function(s, i) {
       const score = allScores[s.id] || 0;
@@ -743,67 +744,106 @@ document.addEventListener('DOMContentLoaded', () => {
       '<th style="width:30%;">التقييم والنقاط</th>' +
       '</tr>';
 
-    function buildPages(thead, rows) {
-      var perPage = 9;
+    printReport('السجل الشامل لخريجي حلقة تحفيظ القرآن الكريم', filterLabel, theadHTML, rowsArr);
+  };
+
+  window.printWaitlistOnly = function() {
+    if (!allStudents || allStudents.length === 0) return alert('لا يوجد مسجلين للطباعة.');
+    const filterEl = document.getElementById('batch-filter');
+    const filterVal = filterEl ? filterEl.value : 'all';
+    const filterLabel = filterVal === 'all' ? 'طلاب الاحتياط (تاريخي)' : ('احتياط دفعة ' + filterVal);
+
+    let filtered = allStudents.filter(s => s.status === 'waitlisted');
+    if (filterVal !== 'all') {
+      const bn = parseInt(filterVal);
+      filtered = filtered.filter(function(s) { return s.batch_number === bn; });
+    }
+    // Sort waitlist by registration date (oldest first)
+    filtered.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+
+    if (filtered.length === 0) return alert('لا يوجد طلاب احتياط في هذا الفلتر.');
+
+    const rowsArr = filtered.map(function(s, i) {
+      const dateObj = new Date(s.created_at);
+      const formattedDate = dateObj.toLocaleDateString('ar-SA', { day: '2-digit', month: '2-digit' });
+      const formattedTime = dateObj.toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit', hour12: true });
+      
+      return '<tr>' +
+        '<td style="text-align:center;"><strong>' + (i+1) + '</strong></td>' +
+        '<td style="text-align:right;"><strong>' + s.full_name + '</strong><br>' +
+        '<small style="color:#666;">الهوية: ' + (s.national_id||'-') + '</small></td>' +
+        '<td style="text-align:center;">' + (s.grade||'-') + ' - ' + (s.class_number||'-') + '</td>' +
+        '<td style="text-align:center;">' +
+           '<div style="font-weight:bold;">' + formattedDate + '</div>' +
+           '<div style="font-size:0.8rem; color:#666;">' + formattedTime + '</div>' +
+        '</td>' +
+        '<td style="direction:ltr;text-align:center;">' + (s.parent_phone||'-') + '</td>' +
+        '</tr>';
+    });
+
+    const theadHTML = '<tr>' +
+      '<th style="width:8%;">م</th>' +
+      '<th style="width:35%;text-align:right;padding-right:8px;">اسم الطالب</th>' +
+      '<th style="width:20%;">الصف / الفصل</th>' +
+      '<th style="width:17%;">موعد التسجيل</th>' +
+      '<th style="width:20%;">رقم الجوال</th>' +
+      '</tr>';
+
+    printReport('بيان قائمة الاحتياط والانتظار', filterLabel, theadHTML, rowsArr);
+  };
+
+  function printReport(mainTitle, subTitle, thead, rows) {
+    const today = new Date().toLocaleDateString('ar-SA-u-nu-latn');
+    const gFont = 'https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;800&family=Amiri:wght@400;700&display=swap';
+    
+    function buildPages(th, r) {
+      var perPage = 10;
       var pages = [];
-      for (var i = 0; i < rows.length; i += perPage) pages.push(rows.slice(i, i + perPage));
+      for (var i = 0; i < r.length; i += perPage) pages.push(r.slice(i, i + perPage));
       return pages.map(function(chunk, idx) {
         var isLast = idx === pages.length - 1;
         return '<div style="page-break-after:' + (isLast ? 'auto' : 'always') + ';">' +
-          '<table><thead>' + thead + '</thead><tbody>' + chunk.join('') + '</tbody></table></div>';
+          '<table><thead>' + th + '</thead><tbody>' + chunk.join('') + '</tbody></table></div>';
       }).join('');
     }
 
-    const gFont = 'https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;800&family=Amiri:wght@400;700&display=swap';
-    const css = [
-      '@page { margin: 8mm; size: A4 portrait; }',
-      '* { box-sizing: border-box; margin: 0; padding: 0; }',
-      'body { font-family: Cairo, sans-serif; background: #fff; color: #111; direction: rtl; }',
-      '.header { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 12px; border-bottom: 2px solid #ccc; margin-bottom: 15px; }',
-      '.header-side { font-weight: bold; font-size: 10pt; line-height: 1.8; }',
-      '.header-center { text-align: center; flex-grow: 1; }',
-      '.header-center img { height: 65px; object-fit: contain; }',
-      '.report-title { text-align: center; margin: 10px 0 15px; }',
-      '.report-title h2 { font-size: 15pt; display: inline-block; border-bottom: 2px solid #888; padding-bottom: 6px; }',
-      'table { width: 100%; border-collapse: collapse; margin-bottom: 0; }',
-      'th { background-color: #f1f5f9 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; font-weight: 800; font-size: 10pt; padding: 9px 6px; border: 1px solid #a0aec0; text-align: center; }',
-      'td { padding: 8px 6px; border: 1px solid #a0aec0; font-size: 9.5pt; vertical-align: middle; }',
-      'tr { page-break-inside: avoid; }',
-      'tbody tr:nth-child(even) { background-color: #f8fafc !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }',
-      '.signature { display: flex; justify-content: space-between; margin-top: 45px; padding: 0 10px; font-size: 11pt; font-weight: bold; page-break-inside: avoid; }',
-      '.signature div { text-align: center; line-height: 4; }'
-    ].join(' ');
+    const css = `
+      @page { margin: 8mm; size: A4 portrait; }
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body { font-family: Cairo, sans-serif; background: #fff; color: #111; direction: rtl; }
+      .header { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 12px; border-bottom: 2px solid #ccc; margin-bottom: 15px; }
+      .header-side { font-weight: bold; font-size: 10pt; line-height: 1.8; }
+      .header-center { text-align: center; flex-grow: 1; }
+      .header-center img { height: 65px; object-fit: contain; }
+      .report-title { text-align: center; margin: 10px 0 15px; }
+      .report-title h2 { font-size: 15pt; display: inline-block; border-bottom: 2px solid #888; padding-bottom: 6px; }
+      table { width: 100%; border-collapse: collapse; margin-bottom: 0; }
+      th { background-color: #f1f5f9 !important; font-weight: 800; font-size: 10pt; padding: 9px 6px; border: 1px solid #a0aec0; text-align: center; }
+      td { padding: 8px 6px; border: 1px solid #a0aec0; font-size: 9.5pt; vertical-align: middle; }
+      tr { page-break-inside: avoid; }
+      tbody tr:nth-child(even) { background-color: #f8fafc !important; }
+      .signature { display: flex; justify-content: space-between; margin-top: 45px; padding: 0 10px; font-size: 11pt; font-weight: bold; page-break-inside: avoid; }
+      .signature div { text-align: center; line-height: 4; }
+    `;
 
-    const header = '<div class="header">' +
-      '<div class="header-side" style="text-align:right;">' +
-        'المملكة العربية السعودية<br>' +
-        'وزارة التعليم<br>' +
-        'إدارة التعليم بمحافظة جدة<br>' +
-        'مدرسة عماد الدين زنكي المتوسطة' +
-      '</div>' +
-      '<div class="header-center"><img src="/new-logo.png" alt="logo"></div>' +
-      '<div class="header-side" style="text-align:left;">' +
-        'السجل: ' + filterLabel + '<br>تاريخ: ' + today +
-      '</div></div>';
+    const html = `<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><title>${mainTitle}</title>
+      <link href="${gFont}" rel="stylesheet"><style>${css}</style></head><body>
+      <div class="header">
+        <div class="header-side" style="text-align:right;">المملكة العربية السعودية<br>وزارة التعليم<br>إدارة التعليم بمحافظة جدة<br>مدرسة عماد الدين زنكي المتوسطة</div>
+        <div class="header-center"><img src="/new-logo.png" alt="logo"></div>
+        <div class="header-side" style="text-align:left;">السجل: ${subTitle}<br>تاريخ التقرير: ${today}</div>
+      </div>
+      <div class="report-title"><h2>${mainTitle}</h2></div>
+      ${buildPages(thead, rows)}
+      <div class="signature">
+        <div>معلم الحلقة<br>فهد علي آل رده</div>
+        <div>الختم الرسمي<br>....................</div>
+        <div>مدير المدرسة<br>عابد عبيد الجدعاني</div>
+      </div>
+      <script>window.onload=function(){window.print();window.onafterprint=function(){window.close();};};</script>
+      </body></html>`;
 
-    const sig = '<div class="signature">' +
-      '<div>معلم الحلقة<br>فهد علي آل رده</div>' +
-      '<div>الختم الرسمي<br>....................</div>' +
-      '<div>مدير المدرسة<br>عابد عبيد الجدعاني</div>' +
-    '</div>';
-
-    const body = header +
-      '<div class="report-title"><h2>السجل الشامل لخريجي حلقة تحفيظ القرآن الكريم</h2></div>' +
-      buildPages(theadHTML, rowsArr) + sig;
-
-    const htmlDoc = '<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8">' +
-      '<title>السجل الشامل</title>' +
-      '<link href="' + gFont + '" rel="stylesheet">' +
-      '<style>' + css + '</style></head><body>' + body +
-      '<scr' + 'ipt>window.onload=function(){window.print();window.onafterprint=function(){window.close();};};<' + '/script>' +
-      '</body></html>';
-
-    const w = window.open('', '_blank', 'width=900,height=700');
-    w.document.open(); w.document.write(htmlDoc); w.document.close();
+    const w = window.open('', '_blank', 'width=950,height=750');
+    w.document.open(); w.document.write(html); w.document.close();
   };
 });
