@@ -100,21 +100,49 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  function buildRoster(batchNum) {
-    const rosterGradeFilter = document.getElementById('roster-grade-filter');
-    const rosterTableBody = document.getElementById('roster-table-body');
-    if (!rosterGradeFilter || !rosterTableBody) return;
-
-    // Filter to current batch only
+  async function buildRoster(batchNum) {
+    if (!batchNum) return;
+    
     const currentStudents = allStudents.filter(s => s.batch_number === batchNum);
+    const rosterTableBody = document.getElementById('roster-table-body');
+    const rosterGradeFilter = document.getElementById('roster-grade-filter');
+    const rosterSearch = document.getElementById('roster-search');
+    const rosterTitle = document.getElementById('roster-title');
+    const rosterSubtitle = document.getElementById('roster-subtitle');
+    const tabActiveBtn = document.getElementById('show-active-tabs');
+    const tabWaitlistBtn = document.getElementById('show-waitlist-tabs');
 
-    // Sort by grade then class
-    currentStudents.sort((a, b) => {
-      if ((a.grade || '') === (b.grade || '')) {
-        return (a.class_number || '').toString().localeCompare((b.class_number || '').toString());
+    if (!rosterTableBody) return;
+
+    // Tab Listeners
+    tabActiveBtn.onclick = () => {
+      currentRosterTab = 'active';
+      updateTabUI();
+      renderRosterPreview(rosterGradeFilter.value, rosterSearch.value);
+    };
+    tabWaitlistBtn.onclick = () => {
+      currentRosterTab = 'waitlist';
+      updateTabUI();
+      renderRosterPreview(rosterGradeFilter.value, rosterSearch.value);
+    };
+
+    function updateTabUI() {
+      if (currentRosterTab === 'active') {
+        tabActiveBtn.style.background = 'var(--color-primary)';
+        tabActiveBtn.style.color = '#fff';
+        tabWaitlistBtn.style.background = 'transparent';
+        tabWaitlistBtn.style.color = '#666';
+        rosterTitle.textContent = '📋 تقرير المشاركين - الدفعة الحالية';
+        rosterSubtitle.textContent = 'إدارة بيانات ومعلومات الطلاب في الدورة الحالية';
+      } else {
+        tabWaitlistBtn.style.background = 'var(--color-primary)';
+        tabWaitlistBtn.style.color = '#fff';
+        tabActiveBtn.style.background = 'transparent';
+        tabActiveBtn.style.color = '#666';
+        rosterTitle.textContent = '⏳ الطلاب الاحتياط - الدفعة الحالية';
+        rosterSubtitle.textContent = 'قائمة الانتظار مرتبة حسب أولوية التسجيل (من الأقدم للأحدث)';
       }
-      return (a.grade || '').localeCompare(b.grade || '');
-    });
+    }
 
     // Populate grade dropdown
     const grades = [...new Set(currentStudents.map(s => s.grade).filter(Boolean))].sort();
@@ -126,40 +154,80 @@ document.addEventListener('DOMContentLoaded', () => {
       rosterGradeFilter.appendChild(opt);
     });
 
-    const renderRosterPreview = (filter) => {
-      const filtered = filter === 'all' ? currentStudents : currentStudents.filter(s => s.grade === filter);
+    const renderRosterPreview = (gradeFilter, searchFilter = '') => {
+      const isWaitMode = currentRosterTab === 'waitlist';
+      
+      let filtered = currentStudents.filter(s => {
+        const matchesStatus = isWaitMode ? (s.status === 'waitlisted') : (s.status === 'active');
+        const matchesGrade = gradeFilter === 'all' || s.grade === gradeFilter;
+        const matchesSearch = !searchFilter || 
+                             s.full_name.toLowerCase().includes(searchFilter.toLowerCase()) || 
+                             (s.national_id && s.national_id.includes(searchFilter));
+        return matchesStatus && matchesGrade && matchesSearch;
+      });
+
+      // Sort Waitlist by CreatedAt (Oldest first)
+      if (isWaitMode) {
+        filtered.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+      } else {
+        filtered.sort((a, b) => {
+          if ((a.grade || '') === (b.grade || '')) {
+            return (a.class_number || '').toString().localeCompare((b.class_number || '').toString());
+          }
+          return (a.grade || '').localeCompare(b.grade || '');
+        });
+      }
+
+      // Update Table Headers
+      const headerRow = document.getElementById('roster-table-header');
+      if (isWaitMode) {
+        headerRow.innerHTML = `
+          <th width="10%">ترتيب</th>
+          <th width="35%">اسم الطالب</th>
+          <th width="15%">وقت التسجيل</th>
+          <th width="20%">الصف / الفصل</th>
+          <th width="20%">إجراء</th>
+        `;
+      } else {
+        headerRow.innerHTML = `
+          <th width="40%">اسم الطالب</th>
+          <th width="20%">الصف</th>
+          <th width="20%">الفصل</th>
+          <th width="20%">إجراء</th>
+        `;
+      }
+
       rosterTableBody.innerHTML = '';
       if (filtered.length === 0) {
-        rosterTableBody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#999;">لا يوجد بيانات لهذا الفلتر</td></tr>';
+        const colspan = isWaitMode ? 5 : 4;
+        rosterTableBody.innerHTML = `<tr><td colspan="${colspan}" style="text-align:center; padding:30px; color:#999;">لا يوجد طلاب في هذه القائمة حالياً</td></tr>`;
         return;
       }
-      filtered.forEach((s, i) => {
-        const isWaitlist = s.status === 'waitlisted';
-        const tr = document.createElement('tr');
-        if(isWaitlist) tr.style.background = '#fffbeb';
-        
-        tr.innerHTML = `
-          <td>
-            <strong>${i + 1}- ${s.full_name}</strong>
-            ${isWaitlist ? '<br><span style="background:#fde68a; color:#b45309; font-size:0.7rem; padding:2px 5px; border-radius:4px;">⏳ احتياط</span>' : ''}
-          </td>
-          <td style="text-align:center;">${s.grade || '-'}</td>
-          <td style="text-align:center;">${s.class_number || '-'}</td>
-          <td style="text-align:center; padding:5px;">
-            <div style="display:flex; flex-direction:column; gap:4px;">
-              ${isWaitlist ? `
-                <button class="promote-btn" style="background:#16a34a;color:#fff;border:none;padding:4px 8px;border-radius:4px;font-size:0.75rem;cursor:pointer;font-weight:700;">✅ ترقية</button>
-              ` : ''}
-              <button class="del-btn" style="background:#dc2626;color:#fff;border:none;padding:4px 8px;border-radius:4px;font-size:0.75rem;cursor:pointer;font-weight:700;">🗑️ حذف</button>
-            </div>
-          </td>
-        `;
 
-        if(isWaitlist) {
-            tr.querySelector('.promote-btn').addEventListener('click', () => promoteStudent(s.id, s.full_name));
+      filtered.forEach((s, i) => {
+        const tr = document.createElement('tr');
+        if (isWaitMode) {
+          tr.innerHTML = `
+            <td style="text-align:center;"><span style="background:var(--color-gold); color:#fff; font-weight:bold; padding:2px 10px; border-radius:8px;">${i + 1}</span></td>
+            <td><strong>${s.full_name}</strong></td>
+            <td style="text-align:center; font-size:0.8rem;">${new Date(s.created_at).toLocaleTimeString('ar-SA', {hour:'2-digit', minute:'2-digit'})}</td>
+            <td style="text-align:center;">${s.grade || '-'} - ${s.class_number || '-'}</td>
+            <td style="text-align:center;">
+              <button class="promote-btn" style="background:#16a34a;color:#fff;border:none;padding:5px 12px;border-radius:6px;font-size:0.8rem;cursor:pointer;font-weight:700;">✅ ترقية</button>
+            </td>
+          `;
+          tr.querySelector('.promote-btn').addEventListener('click', () => promoteStudent(s.id, s.full_name));
+        } else {
+          tr.innerHTML = `
+            <td><strong>${i + 1}- ${s.full_name}</strong></td>
+            <td style="text-align:center;">${s.grade || '-'}</td>
+            <td style="text-align:center;">${s.class_number || '-'}</td>
+            <td style="text-align:center;">
+              <button class="del-btn" style="background:#dc2626;color:#fff;border:none;padding:5px 12px;border-radius:6px;font-size:0.8rem;cursor:pointer;font-weight:700;">🗑️ حذف</button>
+            </td>
+          `;
+          tr.querySelector('.del-btn').addEventListener('click', () => deleteStudent(s.id, s.full_name));
         }
-        tr.querySelector('.del-btn').addEventListener('click', () => deleteStudent(s.id, s.full_name));
-        
         rosterTableBody.appendChild(tr);
       });
     };
