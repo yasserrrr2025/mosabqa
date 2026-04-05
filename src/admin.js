@@ -469,7 +469,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const nationalId = document.getElementById('m-national-id').value.trim();
     const phone      = document.getElementById('m-phone').value.trim();
     const grade      = document.getElementById('m-grade').value;
-    const classNum   = document.getElementById('m-class').value.trim();
+    const classNum   = document.getElementById('m-class').value;
     const nationality= document.getElementById('m-nationality').value.trim() || 'سعودي';
 
     if (!name || !nationalId || !phone || !grade || !classNum) {
