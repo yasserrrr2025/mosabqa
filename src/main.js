@@ -231,36 +231,64 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   inquirySubmit.addEventListener('click', async () => {
     const nationalId = inquiryInput.value.trim();
-    if (!nationalId) { alert('يرجى إدخال رقم الهوية'); return; }
+    if (!nationalId) { 
+      inquiryResult.innerHTML = `<div class="feedback-message feedback-error" style="display:block;">يرجى إدخال رقم الهوية</div>`;
+      inquiryResult.style.display = 'block';
+      return; 
+    }
 
     inquirySubmit.disabled = true;
     inquirySubmit.innerHTML = '⏳ جاري البحث...';
     inquiryResult.style.display = 'none';
 
     try {
+      // Re-get current batch to ensure we search correctly
+      const { data: settingsData } = await supabase.from('settings').select('current_batch').single();
+      const currentBatch = settingsData ? settingsData.current_batch : 1;
+
       const { data: student, error } = await supabase
         .from('registrations')
         .select('*')
         .eq('national_id', nationalId)
+        .eq('batch_number', currentBatch)
         .order('created_at', { ascending: false })
         .limit(1)
         .single();
 
       if (error || !student) {
-        inquiryResult.innerHTML = `<div style="background:#fee2e2; color:#b91c1c; padding:15px; border-radius:12px; border:1px solid #fecaca; text-align:center;">عذراً، لم يتم العثور على طالب مسجل بهذا الرقم في الدورة الحالية.</div>`;
+        inquiryResult.innerHTML = `
+          <div style="background:#fee2e2; color:#b91c1c; padding:25px; border-radius:18px; border:1px solid #fecaca; text-align:center; animation: slideUp 0.4s ease-out;">
+            <div style="font-size:3.5rem; margin-bottom:15px;">🔍</div>
+            <h3 style="margin-bottom:10px; font-family:'Amiri', serif; font-size:1.5rem;">عذراً، الطالب غير مسجل!</h3>
+            <p style="color:#7f1d1d; font-size:0.95rem; line-height:1.6;">
+              لم يتم العثور على أي سجل برقم الهوية (<strong>${nationalId}</strong>) في الدورة الحالية.<br>
+              يرجى التأكد من الرقم أو البدء بتسجيل طالب جديد.
+            </p>
+            <button id="go-to-register" style="margin-top:20px; background:#b91c1c; color:#fff; border:none; padding:10px 20px; border-radius:10px; cursor:pointer; font-weight:bold; font-family:inherit;">العودة لصفحة التسجيل</button>
+          </div>`;
+          
+        setTimeout(() => {
+          document.getElementById('go-to-register')?.addEventListener('click', () => switchTab('register'));
+        }, 0);
       } else {
         const isActive = student.status === 'active';
-        let statusCard = '';
         
         if (isActive) {
-          statusCard = `
-            <div style="background:#f0fdf4; border:1px solid #bbfcce; padding:20px; border-radius:15px; text-align:center;">
-              <div style="font-size:2rem; margin-bottom:8px;">✅</div>
-              <h4 style="color:#16a34a; margin-bottom:5px;">الطالب منظم للحلقة</h4>
-              <p style="color:#15803d; font-size:0.9rem;">تم قبول انضمامك للدورة الحالية كطالب أساسي</p>
+           // Redirect to parent page as it contains everything
+           inquiryResult.innerHTML = `
+            <div style="background:#f0fdf4; border:2px solid #bbfcce; padding:30px; border-radius:20px; text-align:center; animation: fadeIn 0.5s ease-out; box-shadow: 0 10px 25px rgba(22, 163, 74, 0.05);">
+              <div class="loader" style="margin: 0 auto 15px; width: 40px; height: 40px;"></div>
+              <h3 style="color:#16a34a; font-family:'Amiri', serif; font-size:1.6rem; margin-bottom:10px;">تم العثور على الطالب 🎉</h3>
+              <p style="color:#15803d; margin-bottom:5px; font-weight:bold;">مرحباً بك، ${student.full_name}</p>
+              <p style="color:#15803d; font-size:0.9rem;">جاري تحويلك الآن إلى بوابة ولي الأمر للاطلاع على كامل التقارير والمنجزات...</p>
             </div>`;
+            inquiryResult.style.display = 'block';
+            setTimeout(() => {
+              window.location.href = `/parent.html?id=${nationalId}`;
+            }, 1800);
+            return;
         } else {
-          // Calculate rank
+          // Waitlist Card
           const { count: rank } = await supabase
             .from('registrations')
             .select('*', { count: 'exact', head: true })
@@ -268,30 +296,31 @@ document.addEventListener('DOMContentLoaded', async () => {
             .eq('status', 'waitlisted')
             .lte('created_at', student.created_at);
 
-          statusCard = `
-            <div style="background:#fffbeb; border:1px solid #fde68a; padding:20px; border-radius:15px; text-align:center;">
-              <div style="font-size:2rem; margin-bottom:8px;">⏳</div>
-              <h4 style="color:#b45309; margin-bottom:5px;">قائمة الاحتياط</h4>
-              <p style="color:#ba8d14; font-weight:bold; font-size:1.1rem; margin:10px 0;">رقم ترتيبك هو: (${rank})</p>
-              <p style="color:#92400e; font-size:0.85rem;">سيتم التواصل معك فور توفر مقعد شاغر</p>
+          inquiryResult.innerHTML = `
+            <div style="background: linear-gradient(145deg, #fffbeb, #fef3c7); border:2px solid #fcd34d; padding:25px; border-radius:20px; text-align:center; box-shadow: 0 10px 20px rgba(245, 158, 11, 0.1); animation: slideUp 0.5s ease-out;">
+              <div style="background:#f59e0b; color:#fff; width:60px; height:60px; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 20px; font-size:1.8rem; box-shadow:0 5px 15px rgba(245, 158, 11, 0.3);">⏳</div>
+              <h3 style="color:#92400e; font-family:'Amiri', serif; font-size:1.5rem; margin-bottom:8px;">حالة الطالب: قائمة الاحتياط</h3>
+              <div style="color:#b45309; font-weight:600; font-size:1.1rem; margin-bottom:15px; background:rgba(255,255,255,0.7); display:inline-block; padding:8px 20px; border-radius:20px; border:1px solid rgba(245, 158, 11, 0.2);">
+                ${student.full_name}
+              </div>
+              <div style="background: #fff; padding:20px; border-radius:18px; border:1px dashed #f59e0b; margin-bottom:15px; position:relative;">
+                <p style="color:#6b7280; font-size:0.9rem; margin-bottom:5px;">رقم ترتيبك في قائمة الانتظار:</p>
+                <div style="font-size:3.5rem; font-weight:800; color:#d97706; font-family:'Cairo', sans-serif; line-height:1;">${rank}</div>
+                <div style="position:absolute; top:-10px; right:-10px; background:#f59e0b; color:#fff; padding:2px 10px; border-radius:10px; font-size:0.7rem;">تحديث حي</div>
+              </div>
+              <p style="color:#92400e; font-size:0.9rem; line-height:1.6; padding: 0 10px;">نعتذر لعدم وجود مقعد شاغر حالياً، وسيتم التواصل معكم فوراً عند انسحاب أي طالب أو زيادة الطاقة الاستيعابية.</p>
+              <div style="margin-top:20px; display:flex; justify-content:space-between; align-items:center; font-size:0.75rem; color:#b45309; opacity:0.7; padding-top:15px; border-top:1px solid rgba(245, 158, 11, 0.1);">
+                <span>تاريخ التسجيل: ${new Date(student.created_at).toLocaleDateString('ar-SA')}</span>
+                <span>الدفعة: ${student.batch_number}</span>
+              </div>
             </div>`;
         }
-
-        inquiryResult.innerHTML = `
-          <div style="background:#fff; border:2px solid #f3f4f6; padding:20px; border-radius:18px; box-shadow:0 10px 25px rgba(0,0,0,0.05);">
-            <div style="text-align:center; margin-bottom:15px; border-bottom:1px dashed #ddd; padding-bottom:15px;">
-              <div style="font-size:0.8rem; color:#999;">اسم الطالب</div>
-              <div style="font-weight:bold; font-size:1.1rem; color:var(--color-primary-dark);">${student.full_name}</div>
-              <div style="font-size:0.85rem; color:#666; margin-top:4px;">${student.grade} - فصل ${student.class_number}</div>
-            </div>
-            ${statusCard}
-          </div>
-        `;
       }
       inquiryResult.style.display = 'block';
     } catch (err) {
       console.error(err);
-      alert('حدث خطأ أثناء الاستعلام');
+      inquiryResult.innerHTML = `<div class="feedback-message feedback-error" style="display:block;">حدث خطأ أثناء الاستعلام. يرجى المحاولة لاحقاً.</div>`;
+      inquiryResult.style.display = 'block';
     } finally {
       inquirySubmit.disabled = false;
       inquirySubmit.innerHTML = '<span>استعلام الآن</span> <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>';

@@ -13,6 +13,14 @@ document.addEventListener('DOMContentLoaded', () => {
   const evalsList = document.getElementById('evaluations-list');
   const downloadCertBtn = document.getElementById('download-cert-btn');
 
+  // Check for auto-search from URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const autoId = urlParams.get('id');
+  if (autoId) {
+    nationalIdInput.value = autoId;
+    setTimeout(() => searchBtn.click(), 300);
+  }
+
   searchBtn.addEventListener('click', async () => {
     const natId = nationalIdInput.value.trim();
     if (natId.length !== 10) {
