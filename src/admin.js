@@ -382,7 +382,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     // ===============================================
 
-    // Render Active Students
+    // Render Active Students (Table 1)
     let rank = 1;
     activeStudents.forEach(student => {
       const score = allScores[student.id] || 0;
@@ -419,16 +419,52 @@ document.addEventListener('DOMContentLoaded', () => {
           </button>
         </td>
       `;
-      
-      // Handlers
-      if(isWaitlist) {
-          tr.querySelector('.promote-btn').addEventListener('click', () => promoteStudent(student.id, student.full_name));
-      }
       tr.querySelector('.del-btn').addEventListener('click', () => deleteStudent(student.id, student.full_name));
-      
       adminTableBody.appendChild(tr);
       rank++;
     });
+
+    // Render Waitlist Students (Table 2 - Sequential Priority)
+    const waitlistSection = document.getElementById('waitlist-section');
+    const waitlistTableBody = document.getElementById('waitlist-table-body');
+    
+    if (waitlistTableBody) {
+      waitlistTableBody.innerHTML = '';
+      if (waitlistedStudents.length > 0) {
+        if(waitlistSection) waitlistSection.style.display = 'block';
+        
+        waitlistedStudents.forEach((student, index) => {
+          const tr = document.createElement('tr');
+          const dateObj = new Date(student.created_at);
+          const formattedDate = dateObj.toLocaleDateString('ar-SA', { day: '2-digit', month: '2-digit' });
+          const formattedTime = dateObj.toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit', hour12: true });
+          
+          tr.innerHTML = `
+            <td style="text-align:center;">
+              <span style="background:var(--color-gold); color:#fff; font-weight:bold; padding:4px 12px; border-radius:10px; font-size:1.1rem;">${index + 1}</span>
+            </td>
+            <td><strong>${student.full_name}</strong><br><span style="font-size:0.8rem; color:#666;">رقم الهوية: ${student.national_id}</span></td>
+            <td style="text-align:center;">
+              <div style="font-size:0.85rem; font-weight:bold;">${formattedDate}</div>
+              <div style="font-size:0.75rem; color:#666;">${formattedTime}</div>
+            </td>
+            <td style="text-align:center;">${student.grade} - ${student.class_number}</td>
+            <td dir="ltr" style="text-align:center;">${student.parent_phone}</td>
+            <td style="text-align:center; padding:6px; vertical-align:middle;">
+              <div style="display:flex; gap:5px; justify-content:center;">
+                <button class="promote-btn" style="background:#16a34a;color:#fff;border:none;padding:7px 10px;border-radius:8px;font-size:0.8rem;cursor:pointer;font-weight:700;font-family:inherit;">✅ ترقية</button>
+                <button class="del-btn" style="background:#dc2626;color:#fff;border:none;padding:7px 10px;border-radius:8px;font-size:0.8rem;cursor:pointer;font-weight:700;font-family:inherit;">🗑️ حذف</button>
+              </div>
+            </td>
+          `;
+          tr.querySelector('.promote-btn').addEventListener('click', () => promoteStudent(student.id, student.full_name));
+          tr.querySelector('.del-btn').addEventListener('click', () => deleteStudent(student.id, student.full_name));
+          waitlistTableBody.appendChild(tr);
+        });
+      } else {
+        if(waitlistSection) waitlistSection.style.display = 'none';
+      }
+    }
   }
 
   endBatchBtn.addEventListener('click', async () => {
