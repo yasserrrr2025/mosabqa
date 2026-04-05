@@ -30,16 +30,23 @@
         </header>
 
         <div id="registration-form-container" class="form-container">
-          <div class="status-badge" id="counter-badge">
-            <span class="pulse-dot"></span>
-            تحديث مباشر: <strong id="registered-count">0</strong> / 25 مسجل
+          <!-- Tab Navigation -->
+          <div class="registration-tabs" style="display: flex; gap: 10px; margin-bottom: 25px; border-bottom: 2px solid #f3f4f6; padding-bottom: 15px;">
+            <button id="tab-register-btn" class="tab-btn active" style="flex: 1; padding: 12px; border: none; border-radius: 12px; font-family: inherit; font-weight: bold; cursor: pointer; transition: all 0.3s; background: var(--color-primary); color: #fff;">📝 تسجيل جديد</button>
+            <button id="tab-inquiry-btn" class="tab-btn" style="flex: 1; padding: 12px; border: none; border-radius: 12px; font-family: inherit; font-weight: bold; cursor: pointer; transition: all 0.3s; background: #f3f4f6; color: #666;">🔍 استعلام عن طالب</button>
           </div>
 
-          <div id="waitlist-banner" style="display:none; background: #fffbeb; color: #b45309; padding: 12px; border-radius: 12px; border: 1.5px solid #fde68a; margin-bottom: 20px; text-align: center; font-size: 0.95rem; line-height: 1.6; box-shadow: 0 4px 12px rgba(245,158,11,0.1);">
-            <div style="font-size: 1.4rem; margin-bottom: 5px;">⏳</div>
-            <strong>العدد الأساسي مكتمل!</strong><br>
-            تسجيلك الآن سيكون في <strong>"قائمة الاحتياط"</strong>.<br>سنتواصل معك في حال توفر مقعد شاغر بإذن الله.
-          </div>
+          <div id="register-section">
+            <div class="status-badge" id="counter-badge">
+              <span class="pulse-dot"></span>
+              تحديث مباشر: <strong id="registered-count">0</strong> / 25 مسجل
+            </div>
+
+            <div id="waitlist-banner" style="display:none; background: #fffbeb; color: #b45309; padding: 12px; border-radius: 12px; border: 1.5px solid #fde68a; margin-bottom: 20px; text-align: center; font-size: 0.95rem; line-height: 1.6; box-shadow: 0 4px 12px rgba(245,158,11,0.1);">
+              <div style="font-size: 1.4rem; margin-bottom: 5px;">⏳</div>
+              <strong>العدد الأساسي مكتمل!</strong><br>
+              تسجيلك الآن سيكون في <strong>"قائمة الاحتياط"</strong>.<br>سنتواصل معك في حال توفر مقعد شاغر بإذن الله.
+            </div>
 
           <form id="sebaq-form">
             <div class="form-group">
@@ -100,6 +107,29 @@
             </button>
             <div id="form-feedback" class="feedback-message"></div>
           </form>
+          </div>
+
+          <!-- Inquiry Section (Hidden by default) -->
+          <div id="inquiry-section" style="display: none;">
+            <div style="text-align: center; margin-bottom: 20px;">
+              <h3 style="color: var(--color-primary-dark); font-family: 'Amiri', serif; font-size: 1.3rem;">تحقق من حالة انضمامك</h3>
+              <p style="color: #666; font-size: 0.9rem;">أدخل رقم الهوية المسجل لمعرفة التفاصيل</p>
+            </div>
+            
+            <div class="form-group">
+              <label for="inquiry-id">رقم هوية الطالب <span class="required">*</span></label>
+              <input type="text" id="inquiry-id" placeholder="1XXXXXXXXX" maxlength="10" inputmode="numeric" />
+            </div>
+            
+            <button id="inquiry-btn" class="submit-btn" style="background: var(--color-primary-dark);">
+              <span>استعلام الآن</span>
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            </button>
+
+            <div id="inquiry-result" style="margin-top: 25px; display: none;">
+               <!-- Results injected via JS -->
+            </div>
+          </div>
         </div>
 
         <div id="limit-reached-container" class="limit-reached-message" style="display: none;">

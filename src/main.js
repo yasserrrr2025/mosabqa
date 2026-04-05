@@ -68,13 +68,13 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
 
       // Check current active count
-      const { count } = await supabase
+      const { count: activeCount } = await supabase
         .from('registrations')
         .select('*', { count: 'exact', head: true })
         .eq('batch_number', currentBatch)
         .eq('status', 'active');
 
-      const isWaitlist = count >= maxCapacity;
+      const isWaitlist = activeCount >= maxCapacity;
       const registrationStatus = isWaitlist ? 'waitlisted' : 'active';
 
       // Insert data
@@ -96,13 +96,20 @@ document.addEventListener('DOMContentLoaded', async () => {
       const successMsg = document.getElementById('success-student-name');
       
       if (isWaitlist) {
+          // Calculate waitlist rank
+          const { count: waitlistRank } = await supabase
+            .from('registrations')
+            .select('*', { count: 'exact', head: true })
+            .eq('batch_number', currentBatch)
+            .eq('status', 'waitlisted');
+
           successTitle.textContent = 'تم الإضافة لقائمة الاحتياط ⏳';
-          successTitle.style.color = '#b45309'; // Amber/Gold
-          successMsg.textContent = `تم تسجيل الطالب "${data.full_name}" في قائمة الاحتياط بنجاح. سنقوم بالتواصل معكم في حال توفر مقعد شاغر.`;
+          successTitle.style.color = '#b45309';
+          successMsg.innerHTML = `تم تسجيل الطالب <strong>"${data.full_name}"</strong> بنجاح.<br><br><div style="background:#fff7ed; padding:15px; border-radius:12px; border:1px solid #ffedd5; color:#c2410c;">أنت الآن الطالب رقم <strong>(${waitlistRank})</strong> في قائمة الاحتياط.<br>سنقوم بالتواصل معكم فور توفر مقعد شاغر.</div>`;
       } else {
           successTitle.textContent = 'تم التسجيل بنجاح! ✅';
           successTitle.style.color = 'var(--color-success)';
-          successMsg.textContent = `بشرى سارة! تم تسجيل الطالب "${data.full_name}" بنجاح.. شكراً لثقتكم.`;
+          successMsg.textContent = `بشرى سارة! تم تسجيل الطالب "${data.full_name}" بنجاح كطالب أساسي في الحلقة.. شكراً لثقتكم.`;
       }
       
       document.getElementById('success-container').style.display = 'block';
@@ -187,4 +194,107 @@ document.addEventListener('DOMContentLoaded', async () => {
     feedbackMessage.style.display = 'none';
     feedbackMessage.className = 'feedback-message';
   }
+
+  // ===== NEW: Tab & Inquiry Logic =====
+  const tabRegisterBtn = document.getElementById('tab-register-btn');
+  const tabInquiryBtn  = document.getElementById('tab-inquiry-btn');
+  const registerSection = document.getElementById('register-section');
+  const inquirySection = document.getElementById('inquiry-section');
+  const inquiryResult = document.getElementById('inquiry-result');
+  const inquiryInput = document.getElementById('inquiry-id');
+  const inquirySubmit = document.getElementById('inquiry-btn');
+
+  function switchTab(target) {
+    if (target === 'register') {
+      tabRegisterBtn.classList.add('active');
+      tabRegisterBtn.style.background = 'var(--color-primary)';
+      tabRegisterBtn.style.color = '#fff';
+      tabInquiryBtn.classList.remove('active');
+      tabInquiryBtn.style.background = '#f3f4f6';
+      tabInquiryBtn.style.color = '#666';
+      registerSection.style.display = 'block';
+      inquirySection.style.display = 'none';
+    } else {
+      tabInquiryBtn.classList.add('active');
+      tabInquiryBtn.style.background = 'var(--color-primary)';
+      tabInquiryBtn.style.color = '#fff';
+      tabRegisterBtn.classList.remove('active');
+      tabRegisterBtn.style.background = '#f3f4f6';
+      tabRegisterBtn.style.color = '#666';
+      inquirySection.style.display = 'block';
+      registerSection.style.display = 'none';
+    }
+  }
+
+  tabRegisterBtn.addEventListener('click', () => switchTab('register'));
+  tabInquiryBtn.addEventListener('click', () => switchTab('inquiry'));
+
+  inquirySubmit.addEventListener('click', async () => {
+    const nationalId = inquiryInput.value.trim();
+    if (!nationalId) { alert('يرجى إدخال رقم الهوية'); return; }
+
+    inquirySubmit.disabled = true;
+    inquirySubmit.innerHTML = '⏳ جاري البحث...';
+    inquiryResult.style.display = 'none';
+
+    try {
+      const { data: student, error } = await supabase
+        .from('registrations')
+        .select('*')
+        .eq('national_id', nationalId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (error || !student) {
+        inquiryResult.innerHTML = `<div style="background:#fee2e2; color:#b91c1c; padding:15px; border-radius:12px; border:1px solid #fecaca; text-align:center;">عذراً، لم يتم العثور على طالب مسجل بهذا الرقم في الدورة الحالية.</div>`;
+      } else {
+        const isActive = student.status === 'active';
+        let statusCard = '';
+        
+        if (isActive) {
+          statusCard = `
+            <div style="background:#f0fdf4; border:1px solid #bbfcce; padding:20px; border-radius:15px; text-align:center;">
+              <div style="font-size:2rem; margin-bottom:8px;">✅</div>
+              <h4 style="color:#16a34a; margin-bottom:5px;">الطالب منظم للحلقة</h4>
+              <p style="color:#15803d; font-size:0.9rem;">تم قبول انضمامك للدورة الحالية كطالب أساسي</p>
+            </div>`;
+        } else {
+          // Calculate rank
+          const { count: rank } = await supabase
+            .from('registrations')
+            .select('*', { count: 'exact', head: true })
+            .eq('batch_number', student.batch_number)
+            .eq('status', 'waitlisted')
+            .lte('created_at', student.created_at);
+
+          statusCard = `
+            <div style="background:#fffbeb; border:1px solid #fde68a; padding:20px; border-radius:15px; text-align:center;">
+              <div style="font-size:2rem; margin-bottom:8px;">⏳</div>
+              <h4 style="color:#b45309; margin-bottom:5px;">قائمة الاحتياط</h4>
+              <p style="color:#ba8d14; font-weight:bold; font-size:1.1rem; margin:10px 0;">رقم ترتيبك هو: (${rank})</p>
+              <p style="color:#92400e; font-size:0.85rem;">سيتم التواصل معك فور توفر مقعد شاغر</p>
+            </div>`;
+        }
+
+        inquiryResult.innerHTML = `
+          <div style="background:#fff; border:2px solid #f3f4f6; padding:20px; border-radius:18px; box-shadow:0 10px 25px rgba(0,0,0,0.05);">
+            <div style="text-align:center; margin-bottom:15px; border-bottom:1px dashed #ddd; padding-bottom:15px;">
+              <div style="font-size:0.8rem; color:#999;">اسم الطالب</div>
+              <div style="font-weight:bold; font-size:1.1rem; color:var(--color-primary-dark);">${student.full_name}</div>
+              <div style="font-size:0.85rem; color:#666; margin-top:4px;">${student.grade} - فصل ${student.class_number}</div>
+            </div>
+            ${statusCard}
+          </div>
+        `;
+      }
+      inquiryResult.style.display = 'block';
+    } catch (err) {
+      console.error(err);
+      alert('حدث خطأ أثناء الاستعلام');
+    } finally {
+      inquirySubmit.disabled = false;
+      inquirySubmit.innerHTML = '<span>استعلام الآن</span> <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>';
+    }
+  });
 });
