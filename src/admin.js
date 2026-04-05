@@ -29,6 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let currentSettingsId = 1;
   let allStudents = [];
   let allScores = {};
+  let currentBatch = 1;
 
   loginBtn.addEventListener('click', async () => {
     // Admin password
@@ -53,6 +54,7 @@ document.addEventListener('DOMContentLoaded', () => {
         regStatusDisplay.textContent = settingsData.is_registration_open ? 'مفتوح 🟢' : 'مغلق (مكتمل) 🔴';
         regStatusDisplay.style.color = settingsData.is_registration_open ? '#16a34a' : '#dc2626';
         if(capacityInput) capacityInput.value = settingsData.max_capacity || 25;
+        currentBatch = settingsData.current_batch;
       }
 
       // 2. Fetch all students across all batches
@@ -374,7 +376,12 @@ document.addEventListener('DOMContentLoaded', () => {
            <span style="display:block; font-weight:bold; color:var(--color-gold-dark);">${score} نقطة</span>
            <span style="font-size:0.9rem;">${finalEval}</span>
         </td>
+        <td class="no-print" style="text-align:center;">
+          <button class="del-btn" data-id="${student.id}" data-name="${student.full_name}">🗑️ حذف</button>
+        </td>
       `;
+      // Delete handler
+      tr.querySelector('.del-btn').addEventListener('click', () => deleteStudent(student.id, student.full_name));
       adminTableBody.appendChild(tr);
       rank++;
     });
@@ -409,6 +416,88 @@ document.addEventListener('DOMContentLoaded', () => {
     } finally {
       endBatchBtn.textContent = '🛑 أرشفة الدفعة الحالية وفتح تسجيل جديد';
       endBatchBtn.disabled = false;
+    }
+  });
+
+  // ===== DELETE STUDENT =====
+  async function deleteStudent(id, name) {
+    if (!confirm(`هل تريد حذف الطالب "${name}" بشكل نهائي؟\nسيتم حذف جميع تقييماته أيضاً.`)) return;
+    try {
+      // Delete evaluations first
+      await supabase.from('evaluations').delete().eq('student_id', id);
+      // Delete student
+      const { error } = await supabase.from('registrations').delete().eq('id', id);
+      if (error) throw error;
+      await loadAdminDashboard();
+    } catch(err) {
+      console.error(err);
+      alert('حدث خطأ أثناء الحذف: ' + err.message);
+    }
+  }
+
+  // ===== ADD STUDENT MODAL =====
+  const addStudentBtn  = document.getElementById('add-student-btn');
+  const modal          = document.getElementById('add-student-modal');
+  const modalCloseBtn  = document.getElementById('modal-close-btn');
+  const modalCancelBtn = document.getElementById('modal-cancel-btn');
+  const addStudentForm = document.getElementById('add-student-form');
+  const modalError     = document.getElementById('modal-error');
+  const modalSubmitBtn = document.getElementById('modal-submit-btn');
+
+  function openModal() {
+    addStudentForm.reset();
+    document.getElementById('m-nationality').value = 'سعودي';
+    modalError.style.display = 'none';
+    modal.classList.add('active');
+    document.getElementById('m-name').focus();
+  }
+  function closeModal() { modal.classList.remove('active'); }
+
+  if (addStudentBtn) addStudentBtn.addEventListener('click', openModal);
+  if (modalCloseBtn)  modalCloseBtn.addEventListener('click',  closeModal);
+  if (modalCancelBtn) modalCancelBtn.addEventListener('click', closeModal);
+  modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+  addStudentForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    modalError.style.display = 'none';
+
+    const name       = document.getElementById('m-name').value.trim();
+    const nationalId = document.getElementById('m-national-id').value.trim();
+    const phone      = document.getElementById('m-phone').value.trim();
+    const grade      = document.getElementById('m-grade').value;
+    const classNum   = document.getElementById('m-class').value.trim();
+    const nationality= document.getElementById('m-nationality').value.trim() || 'سعودي';
+
+    if (!name || !nationalId || !phone || !grade || !classNum) {
+      modalError.style.display = 'block';
+      return;
+    }
+
+    modalSubmitBtn.disabled = true;
+    modalSubmitBtn.textContent = '⏳ جاري الحفظ...';
+
+    try {
+      const { error } = await supabase.from('registrations').insert([{
+        full_name:    name,
+        national_id:  nationalId,
+        parent_phone: phone,
+        grade:        grade,
+        class_number: parseInt(classNum),
+        nationality:  nationality,
+        batch_number: currentBatch
+      }]);
+      if (error) throw error;
+      closeModal();
+      await loadAdminDashboard();
+    } catch(err) {
+      console.error(err);
+      modalError.textContent = '❌ خطأ: ' + (err.message || 'فشل في الحفظ');
+      modalError.style.display = 'block';
+    } finally {
+      modalSubmitBtn.disabled = false;
+      modalSubmitBtn.textContent = '💾 حفظ الطالب';
     }
   });
 

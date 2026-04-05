@@ -161,6 +161,65 @@
       .danger-btn { background: linear-gradient(135deg, #dc2626, #b91c1c) !important; }
       .danger-btn:hover { background: linear-gradient(135deg, #b91c1c, #991b1b) !important; }
 
+      /* ============= Green Button ============= */
+      .btn-green { background: linear-gradient(135deg, #16a34a, #15803d); color: #fff; }
+      .btn-green:hover { box-shadow: 0 8px 20px rgba(22,163,74,0.35); }
+
+      /* ============= Delete Button (table row) ============= */
+      .del-btn {
+        background: linear-gradient(135deg, #ef4444, #dc2626);
+        color: #fff; border: none;
+        padding: 6px 12px; border-radius: 8px;
+        font-size: 0.82rem; cursor: pointer; font-family: inherit; font-weight: 700;
+        transition: all 0.2s; white-space: nowrap;
+      }
+      .del-btn:hover { transform: scale(1.05); box-shadow: 0 4px 12px rgba(239,68,68,0.4); }
+
+      /* ============= Modal ============= */
+      .modal-overlay {
+        display: none; position: fixed; inset: 0; z-index: 9999;
+        background: rgba(0,0,0,0.55); backdrop-filter: blur(4px);
+        justify-content: center; align-items: center; padding: 16px;
+      }
+      .modal-overlay.active { display: flex; }
+      .modal-box {
+        background: #fff; border-radius: 20px; padding: 32px 28px;
+        width: 100%; max-width: 540px; max-height: 90vh; overflow-y: auto;
+        box-shadow: 0 25px 60px rgba(0,0,0,0.25);
+        animation: modalIn 0.3s cubic-bezier(0.34,1.56,0.64,1);
+        position: relative;
+      }
+      @keyframes modalIn {
+        from { opacity: 0; transform: scale(0.88) translateY(20px); }
+        to   { opacity: 1; transform: scale(1) translateY(0); }
+      }
+      .modal-title {
+        font-family: 'Amiri', serif; font-size: 1.4rem;
+        color: var(--color-primary-dark); margin: 0 0 22px;
+        border-bottom: 2px solid var(--color-gold); padding-bottom: 10px;
+        display: flex; align-items: center; gap: 10px;
+      }
+      .modal-close {
+        position: absolute; top: 16px; left: 16px;
+        background: #f3f4f6; border: none; border-radius: 50%;
+        width: 34px; height: 34px; cursor: pointer;
+        font-size: 1.1rem; display: flex; align-items: center; justify-content: center;
+        transition: background 0.2s; color: #555;
+      }
+      .modal-close:hover { background: #e5e7eb; }
+      .modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+      .modal-field { display: flex; flex-direction: column; gap: 5px; }
+      .modal-field.full { grid-column: 1 / -1; }
+      .modal-field label { font-weight: 700; font-size: 0.88rem; color: var(--color-primary-dark); }
+      .modal-field input, .modal-field select {
+        padding: 10px 12px; border: 1.5px solid #d1d5db; border-radius: 10px;
+        font-family: inherit; font-size: 0.95rem; transition: border-color 0.2s;
+      }
+      .modal-field input:focus, .modal-field select:focus { border-color: var(--color-gold); outline: none; }
+      .modal-actions { display: flex; gap: 12px; margin-top: 22px; }
+      .modal-actions button { flex: 1; }
+      #modal-error { color: #dc2626; font-size: 0.88rem; margin-top: 8px; display: none; font-weight: 600; }
+
       /* ============= Responsive ============= */
       @media (max-width: 768px) {
         .stats-grid { grid-template-columns: repeat(2, 1fr); }
@@ -284,6 +343,7 @@
               </select>
             </div>
             <div class="btn-group">
+              <button id="add-student-btn" class="action-btn btn-green">➕ إضافة طالب</button>
               <button onclick="window.printAdminArchive()" class="action-btn btn-gray">🖨️ طباعة السجل</button>
               <button id="end-batch-btn" class="action-btn btn-red">🛑 أرشفة الدفعة وفتح تسجيل جديد</button>
             </div>
@@ -294,11 +354,12 @@
             <table class="students-table print-table">
               <thead>
                 <tr>
-                  <th width="30%">استعلامات الطالب الأساسية</th>
-                  <th width="15%">الهوية الوطنية</th>
-                  <th width="15%">رقم الجوال الخاص</th>
-                  <th width="10%">رقم الدفعة</th>
-                  <th width="30%">التقييم الشامل للجهد والنقاط</th>
+                  <th width="28%">استعلامات الطالب</th>
+                  <th width="14%">الهوية الوطنية</th>
+                  <th width="14%">رقم الجوال</th>
+                  <th width="9%">رقم الدفعة</th>
+                  <th width="27%">التقييم والنقاط</th>
+                  <th width="8%" class="no-print">إجراءات</th>
                 </tr>
               </thead>
               <tbody id="admin-table-body">
@@ -393,6 +454,60 @@
       <div class="decorative-pattern top-left"></div>
       <div class="decorative-pattern bottom-right"></div>
     </div>
+    <!-- ===== Add Student Modal ===== -->
+    <div id="add-student-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-heading">
+      <div class="modal-box">
+        <button class="modal-close" id="modal-close-btn" title="إغلاق">✕</button>
+        <div class="modal-title" id="modal-heading">
+          <span>📝</span> إضافة طالب جديد
+        </div>
+        <form id="add-student-form" autocomplete="off">
+          <div class="modal-grid">
+            <div class="modal-field full">
+              <label for="m-name">اسم الطالب الرباعي *</label>
+              <input type="text" id="m-name" placeholder="الاسم كاملاً" required>
+            </div>
+            <div class="modal-field">
+              <label for="m-national-id">الهوية الوطنية *</label>
+              <input type="text" id="m-national-id" placeholder="10 أرقام" maxlength="10" required>
+            </div>
+            <div class="modal-field">
+              <label for="m-phone">رقم جوال ولي الأمر *</label>
+              <input type="tel" id="m-phone" placeholder="05xxxxxxxx" required>
+            </div>
+            <div class="modal-field">
+              <label for="m-grade">الصف الدراسي *</label>
+              <select id="m-grade" required>
+                <option value="">اختر الصف</option>
+                <option>الصف الأول</option>
+                <option>الصف الثاني</option>
+                <option>الصف الثالث</option>
+                <option>الصف الرابع</option>
+                <option>الصف الخامس</option>
+                <option>الصف السادس</option>
+                <option>الصف السابع</option>
+                <option>الصف الثامن</option>
+                <option>الصف التاسع</option>
+              </select>
+            </div>
+            <div class="modal-field">
+              <label for="m-class">رقم الفصل *</label>
+              <input type="number" id="m-class" placeholder="مثال: 1" min="1" max="20" required>
+            </div>
+            <div class="modal-field">
+              <label for="m-nationality">الجنسية</label>
+              <input type="text" id="m-nationality" placeholder="سعودي" value="سعودي">
+            </div>
+          </div>
+          <div id="modal-error">⚠️ يرجى ملء جميع الحقول المطلوبة بشكل صحيح.</div>
+          <div class="modal-actions">
+            <button type="submit" id="modal-submit-btn" class="submit-btn" style="margin:0;">💾 حفظ الطالب</button>
+            <button type="button" id="modal-cancel-btn" class="submit-btn" style="margin:0; background:#6b7280;">إلغاء</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
     <script type="module" src="/src/admin.js"></script>
   </body>
 </html>
