@@ -44,18 +44,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
   async function loadAdminDashboard() {
     try {
-      // 1. Load settings (status and current batch)
-      const { data: settingsData, error } = await supabase.from('settings').select('*').single();
-      if(error) throw error;
-
-      if(settingsData) {
-        currentSettingsId = settingsData.id;
-        currentBatchDisplay.textContent = settingsData.current_batch;
-        regStatusDisplay.textContent = settingsData.is_registration_open ? 'مفتوح 🟢' : 'مغلق (مكتمل) 🔴';
-        regStatusDisplay.style.color = settingsData.is_registration_open ? '#16a34a' : '#dc2626';
-        if(capacityInput) capacityInput.value = settingsData.max_capacity || 25;
-        currentBatch = settingsData.current_batch;
-      }
+      // 1. Fetch Custom Settings (Batch & Status)
+      const { data: sData, error: sErr } = await supabase.from('settings').select('*').limit(1);
+      if(sErr) throw sErr;
+      
+      const settingsData = (sData && sData.length > 0) ? sData[0] : { current_batch: 1, is_registration_open: true, max_capacity: 25 };
+      
+      currentSettingsId = settingsData ? settingsData.id : null;
+      currentBatchDisplay.textContent = settingsData.current_batch;
+      regStatusDisplay.textContent = settingsData.is_registration_open ? 'مفتوح 🟢' : 'مغلق (مكتمل) 🔴';
+      regStatusDisplay.style.color = settingsData.is_registration_open ? '#16a34a' : '#dc2626';
+      if(capacityInput) capacityInput.value = settingsData.max_capacity || 25;
+      currentBatch = settingsData.current_batch;
 
       // 2. Fetch all students across all batches
       const { data: stds, error: stdErr } = await supabase.from('registrations').select('*').order('created_at', { ascending: true });
