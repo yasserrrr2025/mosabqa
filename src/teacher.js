@@ -520,7 +520,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const mosque = 'مدرسة عماد الدين زنكي المتوسطة';
     const teacherInput = 'فهد علي آل رده';
-    const circle = 'حلقة تحفيظ القرآن الكريم';
+    const circle = 'أبو بكر الصديق رضي الله عنه';
 
     // Prepare data
     const dataRows = window.currentStudents.map(s => [
