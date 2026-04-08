@@ -28,27 +28,37 @@ document.addEventListener('DOMContentLoaded', () => {
 
   async function loadDashboard() {
     try {
+      // 1. Fetch Settings
       const { data: sData, error: sErr } = await supabase.from('settings').select('*').limit(1);
+      if (sErr) throw new Error(`خطأ في جدول الإعدادات: ${sErr.message}`);
+      
       const settings = (sData && sData.length > 0) ? sData[0] : { current_batch: 1 };
       const batchNum = settings.current_batch;
 
       document.getElementById('batch-number-badge').textContent = batchNum;
       if (document.getElementById('print-batch-number')) document.getElementById('print-batch-number').textContent = batchNum;
 
-      const { data: students, error: stdErr } = await supabase.from('registrations').select('*').eq('batch_number', batchNum).order('full_name', { ascending: true });
-      if (stdErr) throw stdErr;
+      // 2. Fetch Students
+      const { data: students, error: stdErr } = await supabase.from('registrations')
+        .select('*')
+        .eq('batch_number', batchNum)
+        .order('full_name', { ascending: true });
+      
+      if (stdErr) throw new Error(`خطأ في جدول التسجيلات: ${stdErr.message}`);
 
       const activeStudents = students.filter(s => s.status === 'active' || s.status === 'accepted');
       const waitlistStudents = students.filter(s => s.status === 'waitlisted').sort((a,b) => new Date(a.created_at) - new Date(b.created_at));
 
+      // 3. Fetch Evaluations
       const { data: evals, error: evalErr } = await supabase.from('evaluations').select('*');
-      if (evalErr) throw evalErr;
+      if (evalErr) throw new Error(`خطأ في جدول التقييمات: ${evalErr.message}`);
 
       const scores = {};
       (evals || []).forEach(ev => {
         if (!scores[ev.student_id]) scores[ev.student_id] = 0;
         scores[ev.student_id] += calculateDayScore(ev.performance, ev.pages_count);
       });
+      
       window.currentScores = scores;
       window.currentStudents = activeStudents;
       window.allStudents = students;
@@ -58,7 +68,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     } catch (err) {
       console.error(err);
-      alert('خطأ في تحميل البيانات.');
+      alert('خطأ تقني: ' + err.message);
     }
   }
 
@@ -277,9 +287,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if(error) throw error;
       }
       
-      // Update local scores
-      const { data: evals } = await supabase.from('evaluations').select('*').eq('student_id', studentId);
-      let sPoints = 0;
+      btn.style.background = '#16a34a'; // Success green
       btn.textContent = 'تم التوثيق ✓';
       setTimeout(() => {
         btn.style.background = 'linear-gradient(135deg, var(--color-success), #15803d)';
@@ -294,6 +302,18 @@ document.addEventListener('DOMContentLoaded', () => {
       btn.disabled = false;
     }
   };
+
+  /**
+   * Helper to get Current Date in Saudi Arabia (KSA) as YYYY-MM-DD
+   */
+  function getSaudiDateStr() {
+      const today = new Date();
+      const saudiTime = new Date(today.toLocaleString("en-US", {timeZone: "Asia/Riyadh"}));
+      const Y = saudiTime.getFullYear();
+      const M = String(saudiTime.getMonth() + 1).padStart(2, '0');
+      const D = String(saudiTime.getDate()).padStart(2, '0');
+      return `${Y}-${M}-${D}`;
+  }
 
   // ======= Shared print utilities =======
   function _printCSS() {
