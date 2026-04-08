@@ -1,8 +1,7 @@
-import { createClient } from '@supabase/supabase-js';
-
+// Using global 'supabase' from CDN
 const supabaseUrl = 'https://oypfhzkbibrpobrvzwtn.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im95cGZoemtiaWJycG9icnZ6d3RuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUxMDY3ODAsImV4cCI6MjA5MDY4Mjc4MH0.pgHCJdvOxOD-btGMmpSIiRblk8o82VxQ2Z36rd7HyGg';
-const supabase = createClient(supabaseUrl, supabaseKey);
+const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
 document.addEventListener('DOMContentLoaded', () => {
   const loginBtn = document.getElementById('login-btn');
@@ -13,7 +12,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const currentBatchBadge = document.getElementById('batch-number-badge');
   
   // Display today's date
-  document.getElementById('current-date-display').textContent = new Date().toLocaleDateString('ar-SA', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  const dateDisp = document.getElementById('current-date-display');
+  if (dateDisp) {
+      dateDisp.textContent = new Date().toLocaleDateString('ar-SA', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  }
 
   loginBtn.addEventListener('click', async () => {
     // Simple frontend protection
