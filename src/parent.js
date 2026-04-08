@@ -102,23 +102,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
     evals.forEach(ev => {
       const dateStr = ev.eval_date || new Date(ev.created_at).toLocaleDateString('ar-SA');
-      const memoTxt = ev.memorized_part ? `<span style="display:block; font-size:0.95rem; color:var(--color-primary-dark); margin-top:8px; font-weight:bold;">📖 المحفوظ: ${ev.memorized_part}</span>` : '';
-      const noteTxt = (ev.notes && ev.notes.trim() !== '') ? `<span style="display:block; font-size:0.9rem; color:#666; margin-top:5px; border-right: 3px solid #ccc; padding-right: 8px;">📝 ملاحظة: ${ev.notes}</span>` : '';
+      const track = ev.track || 'حفظ أجزاء';
+      const pages = ev.pages_count || 0;
       
-      let badgeColor = '#d1d5db';
-      if(ev.performance && ev.performance.includes('ممتاز')) badgeColor = '#fcd34d'; // goldish
-      else if(ev.performance && ev.performance.includes('جيد جداً')) badgeColor = '#bfdbfe'; // light blue
+      const memoTxt = ev.memorized_part ? `<div style="font-size:0.95rem; color:var(--color-primary-dark); margin-top:10px; font-weight:bold; background:#f0f9ff; padding:8px 12px; border-radius:8px; border-right:4px solid #0ea5e9;">📖 المنجز: ${ev.memorized_part}</div>` : '';
+      const noteTxt = (ev.notes && ev.notes.trim() !== '') ? `<div style="font-size:0.9rem; color:#6b7280; margin-top:8px; padding-right:10px; font-style:italic;">💬 ملاحظة المعلم: ${ev.notes}</div>` : '';
+      
+      let badgeStyle = "background:#f1f5f9; color:#475569;";
+      if(ev.performance.includes('ممتاز')) badgeStyle = "background:#fef3c7; color:#92400e; border: 1px solid #fde68a;";
+      else if(ev.performance.includes('جيد جداً')) badgeStyle = "background:#ecfdf5; color:#065f46; border: 1px solid #bbfcce;";
 
       const li = document.createElement('li');
-      li.style.cssText = "padding: 15px; border: 1px solid #eee; border-radius: 8px; margin-bottom: 10px; background: #fff;";
+      li.style.cssText = "padding: 20px; border: 1px solid #e2e8f0; border-radius: 14px; margin-bottom: 15px; background: #fff; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);";
       li.innerHTML = `
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-          <strong style="color:#4b5563;">📅 ${dateStr}</strong>
-          <span style="background:${badgeColor}; color:#374151; padding:3px 10px; border-radius:15px; font-size:0.85rem; font-weight:bold;">${ev.performance}</span>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom:1px dashed #e2e8f0; padding-bottom:10px;">
+          <strong style="color:#1f2937; font-size:1.05rem;">🗓️ ${dateStr}</strong>
+          <span style="${badgeStyle} padding:4px 12px; border-radius:20px; font-size:0.8rem; font-weight:800;">${ev.performance}</span>
         </div>
-        <div style="font-size: 0.95rem; margin-top:8px; display:flex; gap:15px;">
-          <span>التحضير: <strong>${ev.attendance_status}</strong></span>
-          <span>التجويد: <strong>${ev.tajweed || 'غير مقيم'}</strong></span>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; font-size:0.9rem; color:#4b5563;">
+          <div style="background:#f8fafc; padding:8px; border-radius:8px;">🎯 المسار: <strong>${track}</strong></div>
+          <div style="background:#f8fafc; padding:8px; border-radius:8px;">📄 المنجز: <strong>${pages} صفحات</strong></div>
+          <div style="background:#f8fafc; padding:8px; border-radius:8px;">⏰ الحضور: <strong>${ev.attendance_status}</strong></div>
+          <div style="background:#f8fafc; padding:8px; border-radius:8px;">✨ التجويد: <strong>${ev.tajweed || 'غير مقيم'}</strong></div>
         </div>
         ${memoTxt}
         ${noteTxt}

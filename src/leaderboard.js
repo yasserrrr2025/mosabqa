@@ -10,33 +10,40 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   async function fetchLeaderboard() {
     try {
-      // 1. Get current batch (optional, but good for filtering)
-      const { data: settingsData } = await supabase.from('settings').select('current_batch').single();
+      // 1. Get current batch
+      const { data: sData } = await supabase.from('settings').select('current_batch').single();
+      const currentBatch = sData ? sData.current_batch : 1;
       
-      // 2. Fetch all active students
-      const { data: students, error: stdErr } = await supabase.from('registrations').select('id, full_name, grade, class_number');
+      // 2. Fetch active students for CURRENT batch only
+      const { data: students, error: stdErr } = await supabase
+        .from('registrations')
+        .select('id, full_name, grade, class_number')
+        .eq('status', 'active')
+        .eq('batch_number', currentBatch);
+
       if (stdErr) throw stdErr;
       
-      // 3. Fetch evaluations
+      // 3. Fetch all evaluations to calculate real scores
       const { data: evals, error: evalErr } = await supabase.from('evaluations').select('*');
       if (evalErr) throw evalErr;
 
-      // 4. Calculate Scores
+      // 4. Calculate Scores (Performance Points + Pages Count)
       const scores = {};
       evals.forEach(ev => {
         if (!scores[ev.student_id]) scores[ev.student_id] = 0;
-        if (ev.performance === 'ممتاز') scores[ev.student_id] += 3;
-        else if (ev.performance === 'جيد جداً') scores[ev.student_id] += 2;
-        else if (ev.performance === 'جيد') scores[ev.student_id] += 1;
+        let pPoints = 0;
+        if (ev.performance === 'ممتاز') pPoints = 3;
+        else if (ev.performance === 'جيد جداً') pPoints = 2;
+        else if (ev.performance === 'جيد') pPoints = 1;
+        
+        scores[ev.student_id] += (pPoints + (ev.pages_count || 0));
       });
 
       // 5. Build ranking array
-      let rankedStudents = students.map(s => {
-        return {
+      let rankedStudents = students.map(s => ({
           ...s,
           score: scores[s.id] || 0
-        };
-      });
+      }));
 
       // Sort descending by score, and only keep students who actually have points > 0
       rankedStudents = rankedStudents

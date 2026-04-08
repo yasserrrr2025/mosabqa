@@ -28,208 +28,247 @@ document.addEventListener('DOMContentLoaded', () => {
 
   async function loadDashboard() {
     try {
-      // 1. Get current batch from settings
-      const { data: settingsData } = await supabase.from('settings').select('current_batch').single();
-      const currentBatch = settingsData ? settingsData.current_batch : 1;
-      currentBatchBadge.textContent = currentBatch;
-      
-      const printBatchEl = document.getElementById('print-batch-number');
-      const printDateEl = document.getElementById('print-date');
-      if (printBatchEl) printBatchEl.textContent = currentBatch;
-      if (printDateEl) printDateEl.textContent = new Date().toLocaleDateString('ar-SA');
+      const { data: sData, error: sErr } = await supabase.from('settings').select('*').limit(1);
+      const settings = (sData && sData.length > 0) ? sData[0] : { current_batch: 1 };
+      const batchNum = settings.current_batch;
 
-      // 2. Load students for current batch
-      const { data: students, error } = await supabase
-        .from('registrations')
-        .select('*')
-        .eq('status', 'active'); 
-      
-      if (error) throw error;
+      document.getElementById('batch-number-badge').textContent = batchNum;
+      if (document.getElementById('print-batch-number')) document.getElementById('print-batch-number').textContent = batchNum;
 
-      // 3. Load all evaluations to figure out ranking
+      const { data: students, error: stdErr } = await supabase.from('registrations').select('*').eq('batch_number', batchNum).order('full_name', { ascending: true });
+      if (stdErr) throw stdErr;
+
+      const activeStudents = students.filter(s => s.status === 'active' || s.status === 'accepted');
+      const waitlistStudents = students.filter(s => s.status === 'waitlisted').sort((a,b) => new Date(a.created_at) - new Date(b.created_at));
+
       const { data: evals, error: evalErr } = await supabase.from('evaluations').select('*');
       if (evalErr) throw evalErr;
 
-      // Calculate scores
       const scores = {};
       (evals || []).forEach(ev => {
         if (!scores[ev.student_id]) scores[ev.student_id] = 0;
-        if (ev.performance === 'ممتاز') scores[ev.student_id] += 3;
-        else if (ev.performance === 'جيد جداً') scores[ev.student_id] += 2;
-        else if (ev.performance === 'جيد') scores[ev.student_id] += 1;
+        scores[ev.student_id] += calculateDayScore(ev.performance, ev.pages_count);
       });
-
-      // Sort students by score descending
-      students.sort((a, b) => {
-        const scoreA = scores[a.id] || 0;
-        const scoreB = scores[b.id] || 0;
-        return scoreB - scoreA;
-      });
-      
-      window.currentStudents = students;
       window.currentScores = scores;
+      window.currentStudents = activeStudents;
+      window.allStudents = students;
 
-      if (!students || students.length === 0) {
-        document.getElementById('students-grid').innerHTML = '<div style="grid-column: 1/-1; text-align:center; padding: 2rem;">لا يوجد طلاب مسجلون في هذه الدفعة بعد.</div>';
-        return;
-      }
+      renderEvaluationGrid(activeStudents, evals, scores);
+      renderManagementSection(activeStudents, waitlistStudents);
 
+    } catch (err) {
+      console.error(err);
+      alert('خطأ في تحميل البيانات.');
+    }
+  }
+
+  function renderEvaluationGrid(students, evals, scores) {
       const studentsGrid = document.getElementById('students-grid');
       const printTableBody = document.getElementById('print-table-body');
-      
       studentsGrid.innerHTML = '';
       if(printTableBody) printTableBody.innerHTML = '';
       
-      // Get today's Saudi date to fetch pre-existing evaluations for today
-      function getSaudiDateStr() {
-         const today = new Date();
-         const offset = 3 * 60; 
-         const saudiTime = new Date(today.getTime() + offset * 60 * 1000);
-         return saudiTime.toISOString().split('T')[0];
-      }
-      const saudiToday = getSaudiDateStr();
-      
+      const todayStr = getSaudiDateStr();
       const todayMap = {};
       (evals || []).forEach(e => {
          const eDate = e.eval_date || new Date(e.created_at).toISOString().split('T')[0];
-         if (eDate === saudiToday) {
-            todayMap[e.student_id] = e;
-         }
+         if (eDate === todayStr) todayMap[e.student_id] = e;
       });
       
-      let rank = 1;
-
-      students.forEach(student => {
+      students.forEach((student, i) => {
         const score = scores[student.id] || 0;
         const currentEval = todayMap[student.id] || {};
-        
         const att = currentEval.attendance_status || 'حاضر';
         const perf = currentEval.performance || 'ممتاز';
+        const track = currentEval.track || 'حفظ أجزاء';
+        const pages = currentEval.pages_count || 0;
         const taj = currentEval.tajweed || 'متقن للأحكام';
         const note = currentEval.notes || '';
         const memo = currentEval.memorized_part || '';
         
-        // 1. Interactive Card
         const card = document.createElement('div');
         card.className = 'student-eval-card';
         card.innerHTML = `
           <div style="display: flex; justify-content: space-between; align-items: start;">
-            <h3>${rank}. ${student.full_name}</h3>
-            <span style="background: rgba(198,162,86,0.1); color: var(--color-gold-dark); padding: 4px 10px; border-radius: 10px; font-weight: bold; font-size: 0.85rem;">نقاط: ${score}</span>
+            <h3 style="margin:0;">${i+1}. ${student.full_name}</h3>
+            <span style="background: rgba(198,162,86,0.1); color: var(--color-gold-dark); padding: 4px 10px; border-radius: 10px; font-weight: bold; font-size: 0.85rem;">إجمالي: ${score} ن</span>
           </div>
-          <p style="color: #666; font-size: 0.9rem; margin-top: -5px; margin-bottom: 15px;">${student.grade} - فصل ${student.class_number}
-            <div style="margin-top: 5px;">
-              <span class="status-badge">النقاط التراكمية: <span id="dyn-score-${student.id}" style="font-weight:bold;">${scores[student.id] || 0}</span></span>
+          <div style="margin: 5px 0 15px; font-size: 0.85rem; color: #666;">
+            ${student.grade} - فصل ${student.class_number}
+            <div style="display:flex; gap:8px; margin-top:4px;">
+               <span class="status-badge" style="background:#e0f2fe; color:#0369a1;">${track}</span>
+               <span class="status-badge" style="background:#fef3c7; color:#92400e;">نقاط اليوم: <span id="today-score-${student.id}" style="font-weight:bold;">${calculateDayScore(perf, pages)}</span></span>
             </div>
-          </p>
-          
+          </div>
           <div class="eval-card-row">
-            <label>حالة التحضير:</label>
+            <label>حالة الحضور:</label>
             <div class="pill-group">
-              <input type="radio" name="att-${student.id}" id="att-pres-${student.id}" class="pill-radio att-present" value="حاضر" ${att==='حاضر'?'checked':''}>
-              <label for="att-pres-${student.id}" class="pill-label">حاضر</label>
-              
-              <input type="radio" name="att-${student.id}" id="att-exc-${student.id}" class="pill-radio att-excused" value="مستأذن" ${att==='مستأذن'?'checked':''}>
-              <label for="att-exc-${student.id}" class="pill-label">مستأذن</label>
-              
-              <input type="radio" name="att-${student.id}" id="att-abs-${student.id}" class="pill-radio att-absent" value="غائب" ${att==='غائب'?'checked':''}>
-              <label for="att-abs-${student.id}" class="pill-label">غائب</label>
+              <input type="radio" name="att-${student.id}" id="att-p-${student.id}" class="pill-radio att-present" value="حاضر" ${att==='حاضر'?'checked':''}>
+              <label for="att-p-${student.id}" class="pill-label">حاضر</label>
+              <input type="radio" name="att-${student.id}" id="att-e-${student.id}" class="pill-radio att-excused" value="مستأذن" ${att==='مستأذن'?'checked':''}>
+              <label for="att-e-${student.id}" class="pill-label">مستأذن</label>
+              <input type="radio" name="att-${student.id}" id="att-a-${student.id}" class="pill-radio att-absent" value="غائب" ${att==='غائب'?'checked':''}>
+              <label for="att-a-${student.id}" class="pill-label">غائب</label>
             </div>
           </div>
-          
           <div class="eval-card-row">
-            <label>مستوى التسميع والحفظ:</label>
+            <label>المسار:</label>
             <div class="pill-group">
-              <input type="radio" name="perf-${student.id}" id="perf-exc-${student.id}" class="pill-radio perf-excellent" value="ممتاز" ${perf.includes('ممتاز')?'checked':''}>
-              <label for="perf-exc-${student.id}" class="pill-label">ممتاز</label>
-              
-              <input type="radio" name="perf-${student.id}" id="perf-vg-${student.id}" class="pill-radio perf-vgood" value="جيد جداً" ${perf.includes('جيد جداً')?'checked':''}>
-              <label for="perf-vg-${student.id}" class="pill-label">جيد جداً</label>
-              
-              <input type="radio" name="perf-${student.id}" id="perf-g-${student.id}" class="pill-radio perf-good" value="جيد" ${(perf==='جيد')?'checked':''}>
-              <label for="perf-g-${student.id}" class="pill-label">جيد</label>
-              
-              <input type="radio" name="perf-${student.id}" id="perf-w-${student.id}" class="pill-radio perf-weak" value="ضعيف" ${perf.includes('ضعيف')?'checked':''}>
-              <label for="perf-w-${student.id}" class="pill-label">ضعيف</label>
+              <input type="radio" name="track-${student.id}" id="tr-p-${student.id}" class="pill-radio" value="حفظ أجزاء" ${track==='حفظ أجزاء'?'checked':''}>
+              <label for="tr-p-${student.id}" class="pill-label">أجزاء</label>
+              <input type="radio" name="track-${student.id}" id="tr-f-${student.id}" class="pill-radio" value="فضائل السور" ${track==='فضائل السور'?'checked':''}>
+              <label for="tr-f-${student.id}" class="pill-label">فضائل</label>
+              <input type="radio" name="track-${student.id}" id="tr-t-${student.id}" class="pill-radio" value="تحسين تلاوة" ${track==='تحسين تلاوة'?'checked':''}>
+              <label for="tr-t-${student.id}" class="pill-label">تلاوة</label>
             </div>
           </div>
-          
           <div class="eval-card-row">
-            <label>مستوى التجويد:</label>
+            <label>الأداء:</label>
             <div class="pill-group">
-              <input type="radio" name="tajweed-${student.id}" id="taj-exc-${student.id}" class="pill-radio perf-excellent" value="متقن للأحكام" ${taj.includes('متقن')?'checked':''}>
-              <label for="taj-exc-${student.id}" class="pill-label">متقن للأحكام</label>
-              
-              <input type="radio" name="tajweed-${student.id}" id="taj-vg-${student.id}" class="pill-radio perf-vgood" value="يُطبق الأغلب" ${taj.includes('الأغلب')?'checked':''}>
-              <label for="taj-vg-${student.id}" class="pill-label">يُطبق الأغلب</label>
-              
-              <input type="radio" name="tajweed-${student.id}" id="taj-g-${student.id}" class="pill-radio perf-good" value="بحاجة لتطوير" ${taj.includes('تطوير')?'checked':''}>
-              <label for="taj-g-${student.id}" class="pill-label">بحاجة لتطوير</label>
-              
-              <input type="radio" name="tajweed-${student.id}" id="taj-w-${student.id}" class="pill-radio perf-weak" value="لم يتقن" ${taj.includes('لم يتقن')?'checked':''}>
-              <label for="taj-w-${student.id}" class="pill-label">لم يتقن</label>
+              <input type="radio" name="perf-${student.id}" id="p-ex-${student.id}" class="pill-radio perf-excellent" value="ممتاز" ${perf==='ممتاز'?'checked':''}>
+              <label for="p-ex-${student.id}" class="pill-label">ممتاز</label>
+              <input type="radio" name="perf-${student.id}" id="p-vg-${student.id}" class="pill-radio perf-vgood" value="جيد جداً" ${perf==='جيد جداً'?'checked':''}>
+              <label for="p-vg-${student.id}" class="pill-label">جيد جداً</label>
+              <input type="radio" name="perf-${student.id}" id="p-g-${student.id}" class="pill-radio perf-good" value="جيد" ${perf==='جيد'?'checked':''}>
+              <label for="p-g-${student.id}" class="pill-label">جيد</label>
             </div>
           </div>
-
-          <div class="eval-card-row" style="margin-top: 15px;">
-            <input type="text" class="notes-input" id="memo-${student.id}" placeholder="تحديد المحفوظ المنجز (مثال: سورة الكهف، الجزء 29).." style="margin-bottom: 10px; border-color: var(--color-gold);" value="${memo}">
-            <input type="text" class="notes-input" id="note-${student.id}" placeholder="إضافة أي ملاحظات أو توجيهات للطالب..." style="margin-bottom: 15px;" value="${note}">
-            <button class="save-btn" style="width: 100%; border-radius: 20px;" onclick="window.saveEval('${student.id}')" id="btn-${student.id}">تأكيد الحفظ لليوم وحساب النقاط</button>
+          <div class="eval-card-row">
+            <label>عدد الصفحات:</label>
+            <div class="page-pills">
+              ${[0,1,2,3,4,5,6,7,8,9,10].map(n => `
+                <input type="radio" name="pages-${student.id}" id="pg-${n}-${student.id}" class="page-radio" value="${n}" ${pages==n?'checked':''}>
+                <label for="pg-${n}-${student.id}" class="page-label">${n||'❌'}</label>
+              `).join('')}
+            </div>
+          </div>
+          <div class="eval-card-row" style="margin-top:15px; display:flex; flex-direction:column; gap:8px;">
+            <input type="text" class="notes-input" id="memo-${student.id}" placeholder="السورة والآيات.." value="${memo}">
+            <input type="text" class="notes-input" id="note-${student.id}" placeholder="ملاحظات توجيهية.." value="${note}">
+            <button class="save-btn" onclick="window.saveEval('${student.id}')" id="btn-${student.id}">✅ حفظ التقييم</button>
           </div>
         `;
         studentsGrid.appendChild(card);
-        rank++;
       });
-
-    } catch (err) {
-      console.error(err);
-      alert('حدث خطأ في تحميل بيانات الطلاب. يرجى التأكد من تجهيز جداول قاعدة البيانات.');
-    }
   }
 
-  // Global function for the inline onclick handler
+  function renderManagementSection(active, waitlist) {
+      const activeBody = document.getElementById('mgmt-active-body');
+      const waitBody = document.getElementById('mgmt-waitlist-body');
+      if(!activeBody) return;
+
+      activeBody.innerHTML = active.map((s, i) => `
+        <tr>
+          <td><strong>${i+1}. ${s.full_name}</strong></td>
+          <td style="text-align:center;">${s.grade}</td>
+          <td style="text-align:center;">
+            <button onclick="window.teacherDeleteStudent('${s.id}', '${s.full_name}')" style="background:#fee2e2; color:#dc2626; border:none; padding:6px 12px; border-radius:8px; cursor:pointer; font-weight:bold;">🗑️ حذف</button>
+          </td>
+        </tr>
+      `).join('');
+
+      waitBody.innerHTML = waitlist.length ? waitlist.map((s, i) => `
+      <tr>
+        <td style="text-align:center;"><span style="background:#f59e0b; color:#fff; padding:2px 8px; border-radius:5px; font-weight:bold;">${i+1}</span></td>
+        <td><strong>${s.full_name}</strong><br><small style="color:#999;">${new Date(s.created_at).toLocaleDateString('ar-SA')}</small></td>
+        <td style="text-align:center;">
+          ${i === 0 
+            ? `<button onclick="window.teacherPromoteStudent('${s.id}', '${s.full_name}')" style="background:#16a34a; color:#fff; border:none; padding:8px 14px; border-radius:8px; cursor:pointer; font-weight:bold; width:100%;">✅ ترقية (الأولوية)</button>` 
+            : `<span style="color:#999; font-size:0.8rem;">بانتظار المقعد..</span>`
+          }
+        </td>
+      </tr>
+    `).join('') : '<tr><td colspan="3" style="text-align:center; padding:20px; color:#999;">لا يوجد طلاب احتياط حالياً</td></tr>';
+  }
+
+  // Toggle logic
+  document.getElementById('toggle-mgmt-btn')?.addEventListener('click', () => {
+      const evalSec = document.getElementById('eval-section');
+      const mgmtSec = document.getElementById('mgmt-section');
+      const btn = document.getElementById('toggle-mgmt-btn');
+      const isShowingMgmt = mgmtSec.style.display === 'block';
+
+      if (isShowingMgmt) {
+          mgmtSec.style.display = 'none';
+          evalSec.style.display = 'block';
+          btn.innerHTML = '⚙️ إدارة الطلاب';
+          btn.style.background = 'linear-gradient(135deg, #4f46e5, #4338ca)';
+      } else {
+          evalSec.style.display = 'none';
+          mgmtSec.style.display = 'block';
+          btn.innerHTML = '📚 العودة للتقييم';
+          btn.style.background = 'linear-gradient(135deg, #6b7280, #4b5563)';
+      }
+  });
+
+  window.teacherDeleteStudent = async function(id, name) {
+      if (!confirm(`تحذير: هل أنت متأكد من حذف الطالب "${name}"؟ هذا الإجراء لا يمكن التراجع عنه وسيتم حذفه من كافة اللوحات.`)) return;
+      try {
+          const { data: stdData } = await supabase.from('registrations').select('status, batch_number').eq('id', id).single();
+          const wasActive = stdData && (stdData.status === 'active' || stdData.status === 'accepted');
+          const batchNum = stdData ? stdData.batch_number : null;
+
+          const { error } = await supabase.from('registrations').delete().eq('id', id);
+          if (error) throw error;
+
+          alert('تم حذف الطالب بنجاح.');
+          
+          if (wasActive && batchNum) {
+              const { data: waitlisted } = await supabase.from('registrations').select('*').eq('batch_number', batchNum).eq('status', 'waitlisted').order('created_at', { ascending: true }).limit(1);
+              if (waitlisted && waitlisted.length > 0) {
+                  if (confirm(`تم إفراغ مقعد! هل تريد ترقية الطالب "${waitlisted[0].full_name}" من الاحتياط تلقائياً؟`)) {
+                      await window.teacherPromoteStudent(waitlisted[0].id, waitlisted[0].full_name);
+                  }
+              }
+          }
+          loadDashboard();
+      } catch(err) { alert('خطأ أثناء الحذف.'); }
+  };
+
+  window.teacherPromoteStudent = async function(id, name) {
+      try {
+          const { error } = await supabase.from('registrations').update({ status: 'active' }).eq('id', id);
+          if (error) throw error;
+          alert(`تمت ترقية "${name}" بنجاح!`);
+          loadDashboard();
+      } catch(err) { alert('خطأ في الترقية.'); }
+  };
+
+  function calculateDayScore(perf, pages) {
+      let p = 0;
+      if (perf === 'ممتاز') p = 3;
+      else if (perf === 'جيد جداً') p = 2;
+      else if (perf === 'جيد') p = 1;
+      return p + (parseInt(pages) || 0);
+  }
+
   window.saveEval = async function(studentId) {
     const btn = document.getElementById(`btn-${studentId}`);
     const origText = btn.textContent;
-    btn.textContent = 'جاري التوثيق...';
+    btn.textContent = '⏳ جاري الحفظ...';
     btn.disabled = true;
 
-    const attendanceEl = document.querySelector(`input[name="att-${studentId}"]:checked`);
-    const performanceEl = document.querySelector(`input[name="perf-${studentId}"]:checked`);
-    const tajweedEl = document.querySelector(`input[name="tajweed-${studentId}"]:checked`);
-    
-    const attendance = attendanceEl ? attendanceEl.value : 'حاضر';
-    const performance = performanceEl ? performanceEl.value : 'ممتاز';
-    const tajweedVal = tajweedEl ? tajweedEl.value : 'متقن للأحكام';
+    const attendance = document.querySelector(`input[name="att-${studentId}"]:checked`)?.value || 'حاضر';
+    const performance = document.querySelector(`input[name="perf-${studentId}"]:checked`)?.value || 'ممتاز';
+    const track = document.querySelector(`input[name="track-${studentId}"]:checked`)?.value || 'حفظ أجزاء';
+    const pages = document.querySelector(`input[name="pages-${studentId}"]:checked`)?.value || 0;
+    const tajweedVal = document.querySelector(`input[name="tajweed-${studentId}"]:checked`)?.value || 'متقن للأحكام';
     const note = document.getElementById(`note-${studentId}`).value;
     const memo = document.getElementById(`memo-${studentId}`).value;
     
-    // YYYY-MM-DD
-    function getSaudiDate() {
-       const today = new Date();
-       const offset = 3 * 60; 
-       const saudiTime = new Date(today.getTime() + offset * 60 * 1000);
-       return saudiTime.toISOString().split('T')[0];
-    }
-    const todayStr = getSaudiDate();
-
+    const todayStr = getSaudiDateStr();
     const payload = {
       attendance_status: attendance,
       performance: performance,
+      track: track,
+      pages_count: parseInt(pages),
       tajweed: tajweedVal,
       notes: note,
       memorized_part: memo
     };
 
     try {
-      // Check if evaluated today
-      const { data: existingEval } = await supabase
-        .from('evaluations')
-        .select('id')
-        .eq('student_id', studentId)
-        .eq('eval_date', todayStr)
-        .maybeSingle();
-
+      const { data: existingEval } = await supabase.from('evaluations').select('id').eq('student_id', studentId).eq('eval_date', todayStr).maybeSingle();
       if (existingEval) {
         const { error } = await supabase.from('evaluations').update(payload).eq('id', existingEval.id);
         if(error) throw error;
@@ -238,29 +277,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if(error) throw error;
       }
       
-      // Calculate new score instantly
+      // Update local scores
       const { data: evals } = await supabase.from('evaluations').select('*').eq('student_id', studentId);
       let sPoints = 0;
-      (evals || []).forEach(ev => {
-        if (ev.performance === 'ممتاز') sPoints += 3;
-        else if (ev.performance === 'جيد جداً') sPoints += 2;
-        else if (ev.performance === 'جيد') sPoints += 1;
-      });
-      // Update DOM Score
-      const dynScore = document.getElementById(`dyn-score-${studentId}`);
-      if(dynScore) {
-         dynScore.textContent = sPoints;
-         dynScore.style.transform = "scale(1.5)";
-         dynScore.style.transition = "all 0.3s";
-         setTimeout(() => { dynScore.style.transform = "scale(1)"; }, 300);
-      }
-      // Update global context
-      if(window.currentScores) window.currentScores[studentId] = sPoints;
-
-      btn.style.background = 'var(--color-success)';
-      btn.textContent = 'تم توثيق اليوم ✓';
+      btn.textContent = 'تم التوثيق ✓';
       setTimeout(() => {
-        btn.style.background = 'var(--color-primary-dark)';
+        btn.style.background = 'linear-gradient(135deg, var(--color-success), #15803d)';
         btn.textContent = origText;
         btn.disabled = false;
       }, 2000);

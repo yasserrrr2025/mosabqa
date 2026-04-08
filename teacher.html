@@ -169,14 +169,40 @@
         gap: 8px;
       }
 
-      /* ============= Responsive ============= */
-      @media (max-width: 600px) {
-        .info-bar { padding: 12px 14px; }
-        .info-bar .date-info { text-align: right; }
-        .action-btn { font-size: 0.88rem; padding: 9px 14px; }
-        .students-grid { grid-template-columns: 1fr; }
-        .students-table th, .students-table td { padding: 9px 10px; font-size: 0.88rem; }
+      .page-pills {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        margin-top: 8px;
       }
+      .page-radio { display: none; }
+      .page-label {
+        width: 38px;
+        height: 38px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #f1f5f9;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 50%;
+        cursor: pointer;
+        font-weight: bold;
+        font-size: 0.95rem;
+        transition: all 0.2s;
+      }
+      .page-radio:checked + .page-label {
+        background: var(--color-gold);
+        border-color: var(--color-gold-dark);
+        color: #fff;
+        transform: scale(1.1);
+        box-shadow: 0 4px 10px rgba(198,162,86,0.3);
+      }
+
+      /* ============= Management Tab ============= */
+      .mgmt-section { margin-top: 30px; display: none; }
+      .mgmt-table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+      .mgmt-table th { background: #f8fafc; padding: 12px; text-align: right; border-bottom: 2px solid #e2e8f0; }
+      .mgmt-table td { padding: 12px; border-bottom: 1px solid #f1f5f9; }
 
       /* ============= Print: hidden on screen ============= */
       #printable-header, .print-only-signature { display: none; }
@@ -264,6 +290,9 @@
             <button onclick="window.exportToExcel()" class="action-btn" style="background: linear-gradient(135deg, #16a34a, #15803d); color: #fff;">
               📊 تصدير Excel
             </button>
+            <button id="toggle-mgmt-btn" class="action-btn" style="background: linear-gradient(135deg, #4f46e5, #4338ca); color: #fff;">
+              ⚙️ إدارة الطلاب
+            </button>
           </div>
 
           <!-- Section Title -->
@@ -284,8 +313,46 @@
             </table>
           </div>
 
-          <!-- Student Cards -->
-          <div id="students-grid" class="students-grid"></div>
+          <!-- Evaluation Section -->
+          <div id="eval-section">
+            <div id="students-grid" class="students-grid"></div>
+          </div>
+
+          <!-- Management Section -->
+          <div id="mgmt-section" class="mgmt-section no-print">
+            <div class="section-title"><span>👥</span> إدارة شؤون الطلاب (الأساسيين والاحتياط)</div>
+            <div style="margin-bottom: 15px; background: #f0fdf4; padding: 12px; border-radius: 10px; border: 1px solid #bbfcce; font-size: 0.85rem; color: #166534;">
+              💡 ملاحظة: عند حذف طالب "أساسي"، يمكنك ترقية أول طالب من قائمة الاحتياط مباشرة لسد العجز.
+            </div>
+            
+            <h4 style="margin-bottom: 10px; color: var(--color-primary-dark);">✅ الطلاب المشاركون (الأساسيين)</h4>
+            <div style="overflow-x: auto;">
+              <table class="mgmt-table">
+                <thead>
+                  <tr>
+                    <th width="40%">الاسم</th>
+                    <th width="30%">الصف</th>
+                    <th width="30%">إجراء</th>
+                  </tr>
+                </thead>
+                <tbody id="mgmt-active-body"></tbody>
+              </table>
+            </div>
+
+            <h4 style="margin-top: 25px; margin-bottom: 10px; color: #92400e;">⏳ قائمة الاحتياط (الانتظار)</h4>
+            <div style="overflow-x: auto;">
+              <table class="mgmt-table">
+                <thead>
+                  <tr>
+                    <th width="40%">الاسم</th>
+                    <th width="30%">تاريخ التسجيل</th>
+                    <th width="30%">إجراء</th>
+                  </tr>
+                </thead>
+                <tbody id="mgmt-waitlist-body"></tbody>
+              </table>
+            </div>
+          </div>
 
           <!-- Print-only signatures -->
           <div class="print-only-signature">
