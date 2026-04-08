@@ -28,6 +28,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
   async function loadDashboard() {
     try {
+      // 0. Date Handling
+      let selectedDate = document.getElementById('eval-date-picker').value;
+      if (!selectedDate) {
+          selectedDate = getSaudiDateStr();
+          document.getElementById('eval-date-picker').value = selectedDate;
+      }
+      
+      const dateObj = new Date(selectedDate);
+      const displayDay = dateObj.toLocaleDateString('ar-SA', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+      document.getElementById('current-date-badge').textContent = selectedDate;
+      document.getElementById('info-bar-day').textContent = dateObj.toLocaleDateString('ar-SA', { weekday: 'long' });
+
       // 1. Fetch Settings
       const { data: sData, error: sErr } = await supabase.from('settings').select('*').limit(1);
       if (sErr) throw new Error(`خطأ في جدول الإعدادات: ${sErr.message}`);
@@ -36,7 +48,6 @@ document.addEventListener('DOMContentLoaded', () => {
       const batchNum = settings.current_batch;
 
       document.getElementById('batch-number-badge').textContent = batchNum;
-      if (document.getElementById('print-batch-number')) document.getElementById('print-batch-number').textContent = batchNum;
 
       // 2. Fetch Students
       const { data: students, error: stdErr } = await supabase.from('registrations')
@@ -48,6 +59,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const activeStudents = students.filter(s => s.status === 'active' || s.status === 'accepted');
       const waitlistStudents = students.filter(s => s.status === 'waitlisted').sort((a,b) => new Date(a.created_at) - new Date(b.created_at));
+      
+      document.getElementById('active-count-badge').textContent = activeStudents.length;
 
       // 3. Fetch Evaluations
       const { data: evals, error: evalErr } = await supabase.from('evaluations').select('*');
@@ -63,7 +76,7 @@ document.addEventListener('DOMContentLoaded', () => {
       window.currentStudents = activeStudents;
       window.allStudents = students;
 
-      renderEvaluationGrid(activeStudents, evals, scores);
+      renderEvaluationGrid(activeStudents, evals, scores, selectedDate);
       renderManagementSection(activeStudents, waitlistStudents);
 
     } catch (err) {
@@ -72,27 +85,24 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  function renderEvaluationGrid(students, evals, scores) {
+  function renderEvaluationGrid(students, evals, scores, targetDate) {
       const studentsGrid = document.getElementById('students-grid');
-      const printTableBody = document.getElementById('print-table-body');
       studentsGrid.innerHTML = '';
-      if(printTableBody) printTableBody.innerHTML = '';
       
-      const todayStr = getSaudiDateStr();
-      const todayMap = {};
+      const targetMap = {};
       (evals || []).forEach(e => {
          const eDate = e.eval_date || new Date(e.created_at).toISOString().split('T')[0];
-         if (eDate === todayStr) todayMap[e.student_id] = e;
+         if (eDate === targetDate) targetMap[e.student_id] = e;
       });
       
       students.forEach((student, i) => {
-        const score = scores[student.id] || 0;
-        const currentEval = todayMap[student.id] || {};
+        const totalScore = scores[student.id] || 0;
+        const currentEval = targetMap[student.id] || {};
+        
         const att = currentEval.attendance_status || 'حاضر';
         const perf = currentEval.performance || 'ممتاز';
         const track = currentEval.track || 'حفظ أجزاء';
         const pages = currentEval.pages_count || 0;
-        const taj = currentEval.tajweed || 'متقن للأحكام';
         const note = currentEval.notes || '';
         const memo = currentEval.memorized_part || '';
         
@@ -100,18 +110,15 @@ document.addEventListener('DOMContentLoaded', () => {
         card.className = 'student-eval-card';
         card.innerHTML = `
           <div style="display: flex; justify-content: space-between; align-items: start;">
-            <h3 style="margin:0;">${i+1}. ${student.full_name}</h3>
-            <span style="background: rgba(198,162,86,0.1); color: var(--color-gold-dark); padding: 4px 10px; border-radius: 10px; font-weight: bold; font-size: 0.85rem;">إجمالي: ${score} ن</span>
+            <h3 style="margin:0; font-size:1.1rem; color:var(--color-primary-dark);">${i+1}. ${student.full_name}</h3>
+            <span style="background: #fffbeb; color: #b45309; border: 1px solid #fde68a; padding: 4px 10px; border-radius: 12px; font-weight: 800; font-size: 0.85rem;">الإجمالي: ${totalScore}</span>
           </div>
-          <div style="margin: 5px 0 15px; font-size: 0.85rem; color: #666;">
-            ${student.grade} - فصل ${student.class_number}
-            <div style="display:flex; gap:8px; margin-top:4px;">
-               <span class="status-badge" style="background:#e0f2fe; color:#0369a1;">${track}</span>
-               <span class="status-badge" style="background:#fef3c7; color:#92400e;">نقاط اليوم: <span id="today-score-${student.id}" style="font-weight:bold;">${calculateDayScore(perf, pages)}</span></span>
-            </div>
+          <div style="margin: 8px 0 18px; font-size: 0.85rem; color: #64748b; font-weight:600;">
+             ${student.grade} - فصل ${student.class_number}
           </div>
+
           <div class="eval-card-row">
-            <label>حالة الحضور:</label>
+            <label style="color:#64748b; font-weight:700;">حالة الحضور:</label>
             <div class="pill-group">
               <input type="radio" name="att-${student.id}" id="att-p-${student.id}" class="pill-radio att-present" value="حاضر" ${att==='حاضر'?'checked':''}>
               <label for="att-p-${student.id}" class="pill-label">حاضر</label>
@@ -121,8 +128,9 @@ document.addEventListener('DOMContentLoaded', () => {
               <label for="att-a-${student.id}" class="pill-label">غائب</label>
             </div>
           </div>
+
           <div class="eval-card-row">
-            <label>المسار:</label>
+            <label style="color:#64748b; font-weight:700;">المسار الحالي:</label>
             <div class="pill-group">
               <input type="radio" name="track-${student.id}" id="tr-p-${student.id}" class="pill-radio" value="حفظ أجزاء" ${track==='حفظ أجزاء'?'checked':''}>
               <label for="tr-p-${student.id}" class="pill-label">أجزاء</label>
@@ -132,8 +140,9 @@ document.addEventListener('DOMContentLoaded', () => {
               <label for="tr-t-${student.id}" class="pill-label">تلاوة</label>
             </div>
           </div>
+
           <div class="eval-card-row">
-            <label>الأداء:</label>
+            <label style="color:#64748b; font-weight:700;">الأداء اليومي:</label>
             <div class="pill-group">
               <input type="radio" name="perf-${student.id}" id="p-ex-${student.id}" class="pill-radio perf-excellent" value="ممتاز" ${perf==='ممتاز'?'checked':''}>
               <label for="p-ex-${student.id}" class="pill-label">ممتاز</label>
@@ -143,19 +152,24 @@ document.addEventListener('DOMContentLoaded', () => {
               <label for="p-g-${student.id}" class="pill-label">جيد</label>
             </div>
           </div>
+
           <div class="eval-card-row">
-            <label>عدد الصفحات:</label>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                <label style="color:#64748b; font-weight:700;">عدد الصفحات المنجزة:</label>
+                <span style="background:#f1f5f9; padding:2px 10px; border-radius:10px; font-weight:bold; font-size:0.8rem; color:var(--color-accent);">نقاط الإنجاز: +${calculateDayScore(perf, pages)}</span>
+            </div>
             <div class="page-pills">
-              ${[0,1,2,3,4,5,6,7,8,9,10].map(n => `
+              ${[0,1,2,3,4,5,6,7,8,9,10,12].map(n => `
                 <input type="radio" name="pages-${student.id}" id="pg-${n}-${student.id}" class="page-radio" value="${n}" ${pages==n?'checked':''}>
                 <label for="pg-${n}-${student.id}" class="page-label">${n||'❌'}</label>
               `).join('')}
             </div>
           </div>
-          <div class="eval-card-row" style="margin-top:15px; display:flex; flex-direction:column; gap:8px;">
-            <input type="text" class="notes-input" id="memo-${student.id}" placeholder="السورة والآيات.." value="${memo}">
-            <input type="text" class="notes-input" id="note-${student.id}" placeholder="ملاحظات توجيهية.." value="${note}">
-            <button class="save-btn" onclick="window.saveEval('${student.id}')" id="btn-${student.id}">✅ حفظ التقييم</button>
+
+          <div class="eval-card-row" style="margin-top:20px; border-top: 1px solid #f1f5f9; padding-top:20px; display:flex; flex-direction:column; gap:12px;">
+            <input type="text" class="notes-input" id="memo-${student.id}" placeholder="📖 السورة والآيات التي تم تسميعها.." value="${memo}">
+            <input type="text" class="notes-input" id="note-${student.id}" placeholder="💡 ملاحظات توجيهية لولي الأمر.." value="${note}">
+            <button class="save-btn" onclick="window.saveEval('${student.id}')" id="btn-${student.id}">✅ اعتماد التقييم</button>
           </div>
         `;
         studentsGrid.appendChild(card);
@@ -293,7 +307,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const note = document.getElementById(`note-${studentId}`).value;
     const memo = document.getElementById(`memo-${studentId}`).value;
     
-    const todayStr = getSaudiDateStr();
+    // Use the date from the picker so we can edit old days correctly
+    const todayStr = document.getElementById('eval-date-picker').value || getSaudiDateStr();
     const payload = {
       attendance_status: attendance,
       performance: performance,
