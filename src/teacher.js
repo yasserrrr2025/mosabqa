@@ -212,27 +212,54 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   window.teacherDeleteStudent = async function(id, name) {
-      if (!confirm(`تحذير: هل أنت متأكد من حذف الطالب "${name}"؟ هذا الإجراء لا يمكن التراجع عنه وسيتم حذفه من كافة اللوحات.`)) return;
+      if (!confirm(`تحذير: هل أنت متأكد من حذف الطالب "${name}"؟\nسيتم حذفه نهائياً من كافة السجلات واللوحات.`)) return;
+      
       try {
-          const { data: stdData } = await supabase.from('registrations').select('status, batch_number').eq('id', id).single();
+          // 1. Check current status
+          const { data: stdData, error: fetchErr } = await supabase.from('registrations').select('status, batch_number').eq('id', id).single();
+          if (fetchErr) throw fetchErr;
+
           const wasActive = stdData && (stdData.status === 'active' || stdData.status === 'accepted');
           const batchNum = stdData ? stdData.batch_number : null;
 
-          const { error } = await supabase.from('registrations').delete().eq('id', id);
-          if (error) throw error;
+          // 2. Perform Delete
+          // In Supabase, delete might succeed (no error) but affect 0 rows if RLS is restrictive.
+          const { error, count } = await supabase.from('registrations')
+            .delete({ count: 'exact' })
+            .eq('id', id);
 
-          alert('تم حذف الطالب بنجاح.');
+          if (error) throw error;
           
+          if (count === 0) {
+              alert('عذراً، لم يتم حذف الطالب. قد لا تملك الصلاحية الكافية لحذف هذا السجل من قاعدة البيانات.');
+              return;
+          }
+          
+          alert('تم حذف الطالب من النظام بنجاح وتفريغ مقعده.');
+          
+          // 3. Auto-Promote Waitlist if seat was freed
           if (wasActive && batchNum) {
-              const { data: waitlisted } = await supabase.from('registrations').select('*').eq('batch_number', batchNum).eq('status', 'waitlisted').order('created_at', { ascending: true }).limit(1);
+              const { data: waitlisted } = await supabase.from('registrations')
+                .select('*')
+                .eq('batch_number', batchNum)
+                .eq('status', 'waitlisted')
+                .order('created_at', { ascending: true })
+                .limit(1);
+
               if (waitlisted && waitlisted.length > 0) {
-                  if (confirm(`تم إفراغ مقعد! هل تريد ترقية الطالب "${waitlisted[0].full_name}" من الاحتياط تلقائياً؟`)) {
+                  if (confirm(`تم إفراغ مقعد! هل تريد ترقية الطالب "${waitlisted[0].full_name}" من قائمة الاحتياط الآن؟`)) {
                       await window.teacherPromoteStudent(waitlisted[0].id, waitlisted[0].full_name);
                   }
               }
           }
-          loadDashboard();
-      } catch(err) { alert('خطأ أثناء الحذف.'); }
+
+          // 4. Force UI Reload
+          await loadDashboard();
+
+      } catch(err) { 
+          console.error("Delete Student Error:", err);
+          alert('عذراً، حدث خطأ أثناء الحذف: ' + (err.message || 'قد لا تملك صلاحية حذف هذا السجل.')); 
+      }
   };
 
   window.teacherPromoteStudent = async function(id, name) {
