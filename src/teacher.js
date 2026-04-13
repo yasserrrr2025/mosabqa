@@ -430,26 +430,15 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function _openPrintWin(titleText, bodyContent) {
-    // Mobile-friendly inline printing approach
-    const container = document.getElementById('print-report-area');
-    container.innerHTML = bodyContent;
-    
-    // Temporarily title the page for print
-    const oldTitle = document.title;
-    document.title = titleText;
-    
-    // Add class to body to hide everything else
-    document.body.classList.add('is-printing');
-    
-    // Trigger print
-    window.print();
-    
-    // Cleanup after printing dialog closes
-    setTimeout(() => {
-      document.body.classList.remove('is-printing');
-      document.title = oldTitle;
-      container.innerHTML = '';
-    }, 1000);
+    const gFont = 'https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;800&family=Amiri:wght@400;700&display=swap';
+    const html = '<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><title>' + titleText + '</title>' +
+      '<link href="' + gFont + '" rel="stylesheet">' +
+      '<style>' + _printCSS() + '</style></head><body>' + bodyContent +
+      '<scr' + 'ipt>window.onload=function(){window.print();window.onafterprint=function(){window.close();};};<' + '/script>' +
+      '</body></html>';
+    const w = window.open('', '_blank', 'width=900,height=700');
+    if (!w) return alert('يرجى السماح بالنوافذ المنبثقة (Popups) لعرض التقارير.');
+    w.document.open(); w.document.write(html); w.document.close();
   }
 
   window.preparePrint = async function(type) {
@@ -852,6 +841,24 @@ document.addEventListener('DOMContentLoaded', () => {
       ctx.font = 'bold 18px Cairo, sans-serif';
       ctx.fillStyle = '#fbbf24';
       ctx.fillText('بارك الله في جهودكم يا أشبال القرآن', 300, 760);
+  };
+
+  /**
+   * Safe Filter students by search query (V2)
+   */
+  window.filterStudentsV2 = function() {
+      const q = (document.getElementById('student-search-v2')?.value || "").toLowerCase().trim();
+      const cards = document.querySelectorAll('.student-eval-card');
+      
+      cards.forEach(card => {
+          const name = card.querySelector('h3')?.textContent.toLowerCase() || "";
+          // Check if it exists or matches
+          if (name.includes(q)) {
+              card.style.display = 'block';
+          } else {
+              card.style.display = 'none';
+          }
+      });
   };
 
   /**

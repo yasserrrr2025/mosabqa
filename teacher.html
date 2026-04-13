@@ -250,6 +250,47 @@
       .mgmt-table th { background: #f8fafc; padding: 18px; text-align: right; border-bottom: 2px solid #e2e8f0; color: #64748b; font-size: 0.95rem; }
       .mgmt-table td { padding: 18px; border-bottom: 1px solid #f1f5f9; }
 
+      /* ======= Modern Navigation Enhancements (Safe & Subtle) ======= */
+      .floating-nav {
+        position: fixed;
+        bottom: 30px;
+        left: 30px;
+        z-index: 2000;
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+      }
+      .fab-btn {
+        width: 60px; height: 60px;
+        border-radius: 50%;
+        background: #1e293b;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.6rem;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        border: 4px solid #fff;
+      }
+      .fab-btn:hover { transform: scale(1.1) rotate(5deg); background: var(--color-accent); }
+      .fab-btn.secondary { width: 50px; height: 50px; background: white; color: #1e293b; font-size: 1.3rem; border: 2px solid #e2e8f0; }
+
+      .search-box-modern {
+        margin: 20px 0 30px;
+        background: white;
+        padding: 18px 25px;
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        border: 2px solid #e2e8f0;
+        box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05);
+      }
+      .search-box-modern input { flex:1; border:none; outline:none; font-family: inherit; font-size: 1.1rem; font-weight: 600; color: #1e293b; }
+      .search-box-modern span { font-size: 1.4rem; color: #94a3b8; }
+
       @media (max-width: 768px) {
         .app-container { padding: 20px 15px; }
         .registration-card { padding: 25px; }
@@ -386,9 +427,13 @@
             <button onclick="window.preparePrint('final')" class="action-btn" style="background: linear-gradient(135deg, var(--color-gold), var(--color-gold-dark)); color: #fff;">
               🏆 التقرير الختامي
             </button>
+          </div>
 
-
-
+          <!-- Custom Modern Search (New) -->
+          <div class="search-box-modern no-print">
+            <span>🔍</span>
+            <input type="text" id="student-search-v2" placeholder="ابحث عن اسم الطالب بسرعة..." onkeyup="window.filterStudentsV2()">
+          </div>
 
           <!-- Section Title -->
           <div class="section-title no-print">
@@ -493,6 +538,13 @@
             <button onclick="document.getElementById('poster-modal').style.display='none'" class="action-btn" style="background:#ef4444; color:white; min-width:120px;">❌ إغلاق</button>
          </div>
       </div>
+    </div>
+
+    <!-- Floating Modern Navigation (Safe Fix for Scrolling) -->
+    <div class="floating-nav no-print">
+      <button onclick="document.querySelector('.search-box-modern').scrollIntoView({behavior:'smooth'}); document.getElementById('student-search-v2').focus();" class="fab-btn secondary" title="البحث">🔍</button>
+      <button onclick="window.pickRandomStudent()" class="fab-btn" title="اختيار عشوائي">🎲</button>
+      <button onclick="window.scrollTo({top:0, behavior:'smooth'})" class="fab-btn secondary" title="للأعلى">☝️</button>
     </div>
 
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
