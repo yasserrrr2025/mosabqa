@@ -430,36 +430,27 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function _openPrintWin(titleText, bodyContent) {
-    const modal = document.getElementById('print-viewer-modal');
-    const content = document.getElementById('print-content-actual');
+    // Mobile-friendly inline printing approach
+    const container = document.getElementById('print-report-area');
+    container.innerHTML = bodyContent;
     
-    content.innerHTML = bodyContent;
-    modal.style.display = 'flex';
-    
-    window.currentPrintTitle = titleText;
-    // Add scroll to top of modal
-    modal.scrollTop = 0;
-  }
-
-  window.triggerFinalPrint = function() {
+    // Temporarily title the page for print
     const oldTitle = document.title;
-    document.title = window.currentPrintTitle || 'Report';
+    document.title = titleText;
+    
+    // Add class to body to hide everything else
     document.body.classList.add('is-printing');
     
+    // Trigger print
     window.print();
     
-    // We don't auto-close modal here so user can print again if needed
-    // But we remove the printing class
+    // Cleanup after printing dialog closes
     setTimeout(() => {
-        document.body.classList.remove('is-printing');
-        document.title = oldTitle;
+      document.body.classList.remove('is-printing');
+      document.title = oldTitle;
+      container.innerHTML = '';
     }, 1000);
-  };
-
-  window.closePrintViewer = function() {
-    document.getElementById('print-viewer-modal').style.display = 'none';
-    document.getElementById('print-content-actual').innerHTML = '';
-  };
+  }
 
   window.preparePrint = async function(type) {
     if (!window.currentStudents || window.currentStudents.length === 0) return alert('لا يوجد طلاب للطباعة.');
@@ -861,25 +852,6 @@ document.addEventListener('DOMContentLoaded', () => {
       ctx.font = 'bold 18px Cairo, sans-serif';
       ctx.fillStyle = '#fbbf24';
       ctx.fillText('بارك الله في جهودكم يا أشبال القرآن', 300, 760);
-  };
-
-  /**
-   * Filter students by search query
-   */
-  window.filterStudents = function() {
-      const q = document.getElementById('student-search').value.toLowerCase().trim();
-      const cards = document.querySelectorAll('.student-eval-card');
-      
-      cards.forEach(card => {
-          const name = card.querySelector('h3').textContent.toLowerCase();
-          const info = card.querySelector('div[style*="font-size: 0.85rem"]').textContent.toLowerCase();
-          
-          if (name.includes(q) || info.includes(q)) {
-              card.style.display = 'block';
-          } else {
-              card.style.display = 'none';
-          }
-      });
   };
 
   /**
