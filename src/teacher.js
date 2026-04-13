@@ -529,7 +529,6 @@ document.addEventListener('DOMContentLoaded', () => {
         printWin.close();
         alert('حدث خطأ فني أثناء تجهيز التقرير.');
     }
-    }
   };
 
   /**
