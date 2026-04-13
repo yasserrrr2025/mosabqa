@@ -551,24 +551,26 @@ document.addEventListener('DOMContentLoaded', () => {
         const rowsArr = studentEvals.map(ev => `
           <tr>
             <td>${ev.eval_date}</td>
-            <td>${ev.attendance || 'حاضر'}</td>
+            <td>${ev.attendance_status || 'حاضر'}</td>
             <td>${ev.track || '-'}</td>
             <td>${ev.performance || '-'}</td>
-            <td>${ev.pages || '0'}</td>
-            <td class="name-cell">${ev.memo || '-'}</td>
+            <td>${ev.tajweed || '-'}</td>
+            <td>${ev.pages_count || '0'}</td>
+            <td class="name-cell">${ev.memorized_part || '-'}</td>
             <td class="name-cell">${ev.notes || '-'}</td>
           </tr>
         `);
 
         const thead = `
           <tr>
-            <th style="width:12%;">التاريخ</th>
+            <th style="width:10%;">التاريخ</th>
             <th style="width:10%;">الحضور</th>
             <th style="width:12%;">المسار</th>
-            <th style="width:12%;">الأداء</th>
+            <th style="width:10%;">الأداء</th>
+            <th style="width:12%;">رتبة التجويد</th>
             <th style="width:8%;">الصفحات</th>
-            <th style="width:23%;">السور والآيات</th>
-            <th style="width:23%;">الملاحظات</th>
+            <th style="width:19%;">السور والآيات</th>
+            <th style="width:19%;">الملاحظات</th>
           </tr>
         `;
 
@@ -582,7 +584,7 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
             <table>
               <thead>${thead}</thead>
-              <tbody>${rowsArr.length ? rowsArr.join('') : '<tr><td colspan="7" style="padding:30px;">لا يوجد سجلات تقييم لهذا الطالب حتى الآن</td></tr>'}</tbody>
+              <tbody>${rowsArr.length ? rowsArr.join('') : '<tr><td colspan="8" style="padding:30px;">لا يوجد سجلات تقييم لهذا الطالب حتى الآن</td></tr>'}</tbody>
             </table>
             ${_printSignature()}
           </div>
