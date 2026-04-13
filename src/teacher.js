@@ -110,6 +110,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const card = document.createElement('div');
         card.className = 'student-eval-card';
+        card.id = `card-${student.id}`;
         card.innerHTML = `
           <div style="display: flex; justify-content: space-between; align-items: start;">
             <h3 style="margin:0; font-size:1.1rem; color:var(--color-primary-dark);">${i+1}. ${student.full_name}</h3>
@@ -660,55 +661,118 @@ document.addEventListener('DOMContentLoaded', () => {
    * Random Student Picker Logic
    */
   let randomPool = [];
+  let currentPickedStudent = null;
+
   window.pickRandomStudent = function() {
       if (!window.currentStudents || window.currentStudents.length === 0) return alert('لا يوجد طلاب محملون حالياً.');
       
+      const todayDate = document.getElementById('eval-date-picker').value || getSaudiDateStr();
+      
+      // Filter out students marked as 'غائب' for today from the initial list
+      // Note: We'll check the current UI state or the targetMap
+      const validStudents = window.currentStudents.filter(s => {
+          const attInput = document.querySelector(`input[name="att-${s.id}"]:checked`);
+          return !attInput || attInput.value !== 'غائب';
+      });
+
+      if (validStudents.length === 0) return alert('جميع الطلاب مسجلون غياب أو لا يوجد طلاب متاحون.');
+
       // Initialize or refill pool if empty
       if (randomPool.length === 0) {
-          randomPool = [...window.currentStudents];
+          randomPool = [...validStudents];
+      } else {
+          // Sync pool to remove newly marked absentees
+          randomPool = randomPool.filter(s => {
+              const attInput = document.querySelector(`input[name="att-${s.id}"]:checked`);
+              return !attInput || attInput.value !== 'غائب';
+          });
+          if (randomPool.length === 0) randomPool = [...validStudents];
       }
 
       const randomIndex = Math.floor(Math.random() * randomPool.length);
-      const chosen = randomPool.splice(randomIndex, 1)[0];
+      currentPickedStudent = randomPool.splice(randomIndex, 1)[0];
 
-      // Highlight the chosen student card
-      const card = document.getElementById(`card-${chosen.id}`);
+      // Show Result Modal
+      document.getElementById('picker-modal').style.display = 'flex';
+      document.getElementById('picked-student-name').textContent = currentPickedStudent.full_name;
+  };
+
+  window.goToEvaluation = function() {
+      if (!currentPickedStudent) return;
+      document.getElementById('picker-modal').style.display = 'none';
+      
+      const card = document.getElementById(`card-${currentPickedStudent.id}`);
       if (card) {
           card.scrollIntoView({ behavior: 'smooth', block: 'center' });
           card.style.transition = 'all 0.5s ease';
-          card.style.boxShadow = '0 0 40px rgba(245, 158, 11, 0.8)';
-          card.style.border = '4px solid #f59e0b';
+          card.style.boxShadow = '0 0 40px rgba(59, 130, 246, 0.8)';
+          card.style.border = '4px solid var(--color-accent)';
           card.style.transform = 'scale(1.05)';
           
           setTimeout(() => {
               card.style.boxShadow = '';
               card.style.border = '';
               card.style.transform = '';
-          }, 4000);
+          }, 3000);
       }
+  };
 
-      const remaining = randomPool.length;
-      alert(`🎲 الطالب المختار: ${chosen.full_name}\n\n(تبقى ${remaining} طلاب لم يتم اختيارهم في هذه الجولة)`);
+  window.markAbsentFromPicker = function() {
+      if (!currentPickedStudent) return;
+      if (!confirm(`هل أنت متأكد من تسجيل الطالب "${currentPickedStudent.full_name}" غائب لهذا اليوم؟`)) return;
+
+      const studentId = currentPickedStudent.id;
+      // 1. Update UI Radio
+      const absentRadio = document.getElementById(`att-a-${studentId}`);
+      if (absentRadio) absentRadio.checked = true;
+
+      // 2. Perform Save
+      window.saveEval(studentId);
+      
+      // 3. Close Modal
+      document.getElementById('picker-modal').style.display = 'none';
+      
+      // 4. Remove from current pool if present
+      randomPool = randomPool.filter(s => s.id !== studentId);
   };
 
   /**
    * Honor Roll Poster Generator (Canvas)
    */
-  window.generateHonorPoster = function() {
+  window.generateHonorPoster = async function() {
       if (!window.currentStudents || window.currentStudents.length === 0) return alert('لا يوجد طلاب.');
-      // Scores might have been calculated during Excel export or daily view
-      if (!window.currentScores) window.currentScores = {}; 
-
-      // Get top 3
-      const sorted = [...window.currentStudents].sort((a,b) => (window.currentScores[b.id]||0) - (window.currentScores[a.id]||0)).slice(0, 3);
-      if (sorted.length === 0) return alert('لا توجد درجات كافية لتوليد قائمة المتفوقين.');
-
+      
       const modal = document.getElementById('poster-modal');
       const canvas = document.getElementById('honor-canvas');
       const ctx = canvas.getContext('2d');
+      
+      // Calculate scores on the fly if missing or stale
+      if (!window.currentScores || Object.keys(window.currentScores).length === 0) {
+        const { data: evs } = await supabase.from('evaluations').select('student_id, performance, pages_count');
+        const scores = {};
+        (evs || []).forEach(ev => {
+            if (!scores[ev.student_id]) scores[ev.student_id] = 0;
+            scores[ev.student_id] += calculateDayScore(ev.performance, ev.pages_count);
+        });
+        window.currentScores = scores;
+      }
+
+      // Get top 3
+      const sorted = [...window.currentStudents]
+        .filter(s => (window.currentScores[s.id] || 0) > 0) // Only those with points
+        .sort((a,b) => (window.currentScores[b.id]||0) - (window.currentScores[a.id]||0))
+        .slice(0, 3);
+        
+      if (sorted.length === 0) return alert('لا توجد نقاط مسجلة للطلاب لتوليد قائمة المتفوقين حالياً.');
+
       modal.style.display = 'flex';
+      
+      // Wait for fonts to be ready
+      await document.fonts.ready;
 
       // --- DRAW POSTER ---
+      ctx.clearRect(0,0,600,800);
+      
       // 1. Background Gradient
       const grad = ctx.createLinearGradient(0, 0, 0, 800);
       grad.addColorStop(0, '#1e293b');
@@ -717,55 +781,65 @@ document.addEventListener('DOMContentLoaded', () => {
       ctx.fillRect(0, 0, 600, 800);
 
       // 2. Ornaments
-      ctx.strokeStyle = 'rgba(251, 191, 36, 0.1)';
-      ctx.lineWidth = 2;
-      for(let i=0; i<600; i+=40) {
+      ctx.strokeStyle = 'rgba(251, 191, 36, 0.15)';
+      ctx.lineWidth = 1;
+      for(let i=0; i<800; i+=40) {
         ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, 800); ctx.stroke();
         ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(600, i); ctx.stroke();
       }
 
-      // 3. Header
+      // 3. Gold Frame
+      ctx.strokeStyle = '#fbbf24';
+      ctx.lineWidth = 8;
+      ctx.strokeRect(20, 20, 560, 760);
+      ctx.lineWidth = 2;
+      ctx.strokeRect(30,30, 540, 740);
+
+      // 4. Header
       ctx.fillStyle = '#fbbf24';
-      ctx.font = 'bold 36px Cairo';
+      ctx.font = 'bold 36px Cairo, sans-serif';
       ctx.textAlign = 'center';
       ctx.fillText('🏆 فرسان التميز للأسبوع 🏆', 300, 100);
       
       ctx.fillStyle = '#fff';
-      ctx.font = '24px Cairo';
+      ctx.font = '22px Cairo, sans-serif';
       ctx.fillText('حلقة أجيال القرآن - مدرسة عماد الدين زنكي', 300, 150);
       
-      ctx.strokeStyle = '#fbbf24';
-      ctx.lineWidth = 3;
-      ctx.strokeRect(50, 50, 500, 700);
-
-      // 4. Draw Top Students
+      // 5. Draw Top Students
       const colors = ['#fbbf24', '#cbd5e1', '#cd7f32']; // Gold, Silver, Bronze
       const icons = ['🥇', '🥈', '🥉'];
       
       sorted.forEach((s, idx) => {
-          const y = 280 + (idx * 150);
+          const y = 300 + (idx * 160);
+          const score = window.currentScores[s.id] || 0;
           
           // Background Bar
-          ctx.fillStyle = 'rgba(255,255,255,0.05)';
-          ctx.fillRect(50, y-50, 500, 120);
+          ctx.fillStyle = 'rgba(255,255,255,0.08)';
+          ctx.fillRect(60, y-60, 480, 130);
           
-          // Icon & Name
+          // Medal Icon
+          ctx.font = '50px serif';
+          ctx.fillText(icons[idx], 300, y - 10);
+          
+          // Name
           ctx.fillStyle = colors[idx];
-          ctx.font = 'bold 30px Cairo';
-          ctx.fillText(`${icons[idx]} ${s.full_name}`, 300, y);
+          ctx.font = 'bold 32px Cairo, sans-serif';
+          ctx.fillText(s.full_name, 300, y + 35);
           
           // Score
-          ctx.fillStyle = '#fff';
-          ctx.font = '20px Cairo';
-          ctx.fillText(`مجموع النقاط: ${window.currentScores[s.id] || 0} نقطة`, 300, y + 45);
+          ctx.fillStyle = 'rgba(255,255,255,0.8)';
+          ctx.font = '20px Cairo, sans-serif';
+          ctx.fillText(`بمجموع نقاط: ${score} نقطة`, 300, y + 65);
       });
 
-      // 5. Footer
-      ctx.fillStyle = 'rgba(255,255,255,0.5)';
-      ctx.font = '18px Cairo';
+      // 6. Footer
+      ctx.fillStyle = 'rgba(255,255,255,0.4)';
+      ctx.font = '16px Cairo, sans-serif';
       const today = new Date().toLocaleDateString('ar-SA');
-      ctx.fillText(`تاريخ الإصدار: ${today}`, 300, 720);
-      ctx.fillText('بارك الله في جهودكم يا أشبال القرآن', 300, 750);
+      ctx.fillText(`تاريخ الإصدار: ${today}`, 300, 730);
+      ctx.font = 'bold 18px Cairo, sans-serif';
+      ctx.fillStyle = '#fbbf24';
+      ctx.fillText('بارك الله في جهودكم يا أشبال القرآن', 300, 760);
   };
 
   /**
