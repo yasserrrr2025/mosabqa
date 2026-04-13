@@ -855,6 +855,25 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   /**
+   * Filter students by search query
+   */
+  window.filterStudents = function() {
+      const q = document.getElementById('student-search').value.toLowerCase().trim();
+      const cards = document.querySelectorAll('.student-eval-card');
+      
+      cards.forEach(card => {
+          const name = card.querySelector('h3').textContent.toLowerCase();
+          const info = card.querySelector('div[style*="font-size: 0.85rem"]').textContent.toLowerCase();
+          
+          if (name.includes(q) || info.includes(q)) {
+              card.style.display = 'block';
+          } else {
+              card.style.display = 'none';
+          }
+      });
+  };
+
+  /**
    * Download the generated canvas as PNG
    */
   window.downloadPoster = function() {
