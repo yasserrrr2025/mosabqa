@@ -430,14 +430,26 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function _openPrintWin(titleText, bodyContent) {
-    const gFont = 'https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;800&family=Amiri:wght@400;700&display=swap';
-    const html = '<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><title>' + titleText + '</title>' +
-      '<link href="' + gFont + '" rel="stylesheet">' +
-      '<style>' + _printCSS() + '</style></head><body>' + bodyContent +
-      '<scr' + 'ipt>window.onload=function(){window.print();window.onafterprint=function(){window.close();};};<' + '/script>' +
-      '</body></html>';
-    const w = window.open('', '_blank', 'width=900,height=700');
-    w.document.open(); w.document.write(html); w.document.close();
+    // Mobile-friendly inline printing approach
+    const container = document.getElementById('print-report-area');
+    container.innerHTML = bodyContent;
+    
+    // Temporarily title the page for print
+    const oldTitle = document.title;
+    document.title = titleText;
+    
+    // Add class to body to hide everything else
+    document.body.classList.add('is-printing');
+    
+    // Trigger print
+    window.print();
+    
+    // Cleanup after printing dialog closes
+    setTimeout(() => {
+      document.body.classList.remove('is-printing');
+      document.title = oldTitle;
+      container.innerHTML = '';
+    }, 1000);
   }
 
   window.preparePrint = async function(type) {
