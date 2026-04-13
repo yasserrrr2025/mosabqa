@@ -260,6 +260,8 @@
       /* ======= Print Engine Styling ======= */
       #print-report-area { display: none; }
       @media print {
+        @page { margin: 10mm; size: A4 portrait; }
+        
         body.is-printing .app-container,
         body.is-printing .decorative-pattern,
         body.is-printing div[id$="-modal"] { 
@@ -270,11 +272,38 @@
           width: 100% !important;
           padding: 0; margin: 0;
           direction: rtl !important;
+          background: #fff;
         }
-        /* Fix for Safari/iOS printing tables */
-        table { width: 100% !important; border-collapse: collapse; margin-top: 15px; }
-        th, td { border: 1px solid #111; padding: 10px; text-align: center; font-size: 10pt; }
-        th { background: #f1f5f9 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+        /* Header & Logo */
+        .header { display: flex !important; justify-content: space-between !important; align-items: flex-start; padding-bottom: 12px; border-bottom: 2px solid #ccc; margin-bottom: 15px; width: 100%; }
+        .header-side { font-weight: bold; font-size: 10pt; line-height: 1.6; text-align: right; }
+        .header-center { text-align: center; flex-grow: 1; }
+        .header-center img { height: 60px !important; width: auto; object-fit: contain; }
+        
+        /* Titles */
+        .report-title { text-align: center; margin: 10px 0 15px; width: 100%; }
+        .report-title h2 { font-size: 15pt; display: inline-block; border-bottom: 2px solid #888; padding-bottom: 4px; color: #111; }
+        
+        /* Tables */
+        table { width: 100% !important; border-collapse: collapse; margin: 15px 0; }
+        th, td { border: 1px solid #111 !important; padding: 7px; text-align: center; font-size: 9.5pt; color: #000; }
+        th { background: #f1f5f9 !important; -webkit-print-color-adjust: exact; font-weight: bold; }
+        td.name-cell { text-align: right; font-weight: bold; }
+
+        /* Signature Row - Fix vertical stacking */
+        .signature { 
+          display: flex !important; 
+          flex-direction: row !important;
+          justify-content: space-between !important; 
+          margin-top: 50px; 
+          padding: 0 10px; 
+          font-size: 10.5pt; 
+          font-weight: bold; 
+          page-break-inside: avoid;
+          width: 100%;
+        }
+        .signature div { text-align: center; line-height: 3; flex: 1; }
       }
     </style>
   </head>
