@@ -429,171 +429,111 @@ document.addEventListener('DOMContentLoaded', () => {
     `).join('');
   }
 
-  function _openPrintWin(titleText, bodyContent) {
+  function _openPrintWin(titleText, bodyContent, targetWin) {
     const gFont = 'https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;800&family=Amiri:wght@400;700&display=swap';
     const html = '<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><title>' + titleText + '</title>' +
       '<link href="' + gFont + '" rel="stylesheet">' +
       '<style>' + _printCSS() + '</style></head><body>' + bodyContent +
       '<scr' + 'ipt>window.onload=function(){window.print();window.onafterprint=function(){window.close();};};<' + '/script>' +
       '</body></html>';
-    const w = window.open('', '_blank', 'width=900,height=700');
-    if (!w) return alert('يرجى السماح بالنوافذ المنبثقة (Popups) لعرض التقارير.');
+    
+    let w = targetWin;
+    if (!w) {
+        w = window.open('', '_blank', 'width=900,height=700');
+        if (!w) return alert('يرجى السماح بالنوافذ المنبثقة (Popups) لعرض التقارير.');
+    }
+    
     w.document.open(); w.document.write(html); w.document.close();
   }
 
   window.preparePrint = async function(type) {
     if (!window.currentStudents || window.currentStudents.length === 0) return alert('لا يوجد طلاب للطباعة.');
+    
+    // 1. OPEN WINDOW IMMEDIATELY (SYNCHRONOUS) to bypass mobile popup blockers
+    const printWin = window.open('', '_blank', 'width=900,height=700');
+    if (!printWin) return alert('يرجى السماح بالنوافذ المنبثقة (Popups) لعرض التقارير.');
+    printWin.document.write('<div style="font-family:Cairo,sans-serif;text-align:center;margin-top:50px;"><h2>جاري تجهيز التقرير...</h2><p>يرجى الانتظار لحين جلب البيانات.</p></div>');
+
     const bEl = document.getElementById('batch-number-badge');
     const batchNum = bEl ? bEl.textContent.trim() : '';
-    const today = new Date().toLocaleDateString('ar-SA-u-nu-latn');
+    const today = getSaudiDateStr();
 
-    if (type === 'daily') {
-      const rowsArr = window.currentStudents.map(function(s, i) {
-        return '<tr><td class="name-cell"><strong>' + (i+1) + '- ' + s.full_name + '</strong></td>' +
-          '<td>....................</td><td>....................</td><td>................................</td></tr>';
-      });
-      const thead = '<tr>' +
-        '<th style="width:30%;text-align:right;padding-right:10px;">اسم الطالب</th>' +
-        '<th style="width:20%;">التحضير والتسميع</th>' +
-        '<th style="width:20%;">مستوى التجويد</th>' +
-        '<th style="width:30%;">ملاحظات وإنجاز</th></tr>';
-      _openPrintWin('كشف الحضور اليومي',
-        _printHeader(batchNum, today) +
-        '<div class="report-title"><h2>كشف الحضور والتحضير اليومي للحلقة</h2></div>' +
-        _buildPages(thead, rowsArr) + _printSignature()
-      );
+    let titleText = 'تقرير';
+    let bodyContentHTML = '';
 
-    } else if (type === 'final') {
-      const rowsArr = window.currentStudents.map(function(s, i) {
-        const score = (window.currentScores || {})[s.id] || 0;
-        let ev = 'جيد';
-        if (score > 60) ev = 'ممتاز ومتقن';
-        else if (score > 30) ev = 'جيد جداً وثابت';
-        return '<tr><td class="name-cell"><strong>' + (i+1) + '- ' + s.full_name + '</strong></td>' +
-          '<td>' + ev + '</td><td>مُقيَّم</td><td><strong>' + score + ' نقطة</strong></td></tr>';
-      });
-      const thead = '<tr>' +
-        '<th style="width:30%;text-align:right;padding-right:10px;">اسم الطالب</th>' +
-        '<th style="width:25%;">التقييم العام</th>' +
-        '<th style="width:15%;">الحالة</th>' +
-        '<th style="width:30%;">مجموع النقاط</th></tr>';
-      _openPrintWin('التقرير الختامي',
-        _printHeader(batchNum, today) +
-        '<div class="report-title"><h2>التقرير الختامي المقيَّم والمجمَّع لطلاب الحلقة</h2></div>' +
-        _buildPages(thead, rowsArr) + _printSignature()
-      );
+    try {
+        if (type === 'daily') {
+          titleText = 'كشف الحضور اليومي';
+          const rowsArr = window.currentStudents.map(function(s, i) {
+            return '<tr><td class="name-cell"><strong>' + (i+1) + '- ' + s.full_name + '</strong></td>' +
+              '<td>....................</td><td>....................</td><td>................................</td></tr>';
+          });
+          const thead = '<tr>' +
+            '<th style="width:30%;text-align:right;padding-right:10px;">اسم الطالب</th>' +
+            '<th style="width:20%;">التحضير والتسميع</th>' +
+            '<th style="width:20%;">مستوى التجويد</th>' +
+            '<th style="width:30%;">ملاحظات وإنجاز</th></tr>';
+          bodyContentHTML = _printHeader(batchNum, today) +
+            '<div class="report-title"><h2>كشف الحضور والتحضير اليومي للحلقة</h2></div>' +
+            _buildPages(thead, rowsArr) + _printSignature();
 
-    } else if (type === 'roster') {
-      const sorted = window.currentStudents.slice().sort(function(a, b) {
-        if ((a.grade||'') === (b.grade||'')) return (a.class_number||'').toString().localeCompare((b.class_number||'').toString());
-        return (a.grade||'').localeCompare(b.grade||'');
-      });
-      const rowsArr = sorted.map(function(s, i) {
-        return '<tr><td class="name-cell"><strong>' + (i+1) + '- ' + s.full_name + '</strong></td>' +
-          '<td dir="ltr">' + (s.national_id||'-') + '</td>' +
-          '<td>' + (s.grade||'-') + '</td>' +
-          '<td>' + (s.class_number||'-') + '</td>' +
-          '<td>' + (s.nationality||'-') + '</td></tr>';
-      });
-      const thead = '<tr>' +
-        '<th style="width:28%;text-align:right;padding-right:10px;">اسم الطالب</th>' +
-        '<th style="width:22%;">الهوية الوطنية</th>' +
-        '<th style="width:17%;">الصف</th>' +
-        '<th style="width:17%;">الفصل</th>' +
-        '<th style="width:16%;">الجنسية</th></tr>';
-      _openPrintWin('بيان المشاركين',
-        _printHeader(batchNum, today) +
-        '<div class="report-title"><h2>بيان بأسماء الطلاب المشاركين في الدفعة</h2></div>' +
-        _buildPages(thead, rowsArr) + _printSignature()
-      );
-    } else if (type === 'waitlist') {
-      const waitlist = window.allStudents.filter(s => s.status === 'waitlisted').sort((a,b) => new Date(a.created_at) - new Date(b.created_at));
-      if (waitlist.length === 0) return alert('قائمة الاحتياط فارغة حالياً.');
-      
-      const rowsArr = waitlist.map(function(s, i) {
-        return '<tr><td>' + (i+1) + '</td><td class="name-cell"><strong>' + s.full_name + '</strong></td>' +
-          '<td>' + (s.phone || '-') + '</td>' +
-          '<td>' + (s.grade || '-') + '</td>' +
-          '<td>' + (s.class_number || '-') + '</td>' +
-          '<td>' + new Date(s.created_at).toLocaleDateString('ar-SA') + '</td></tr>';
-      });
-      const thead = '<tr>' +
-        '<th style="width:10%;">الأولوية</th>' +
-        '<th style="width:30%;text-align:right;padding-right:10px;">اسم الطالب</th>' +
-        '<th style="width:20%;">رقم الجوال</th>' +
-        '<th style="width:13%;">الصف</th>' +
-        '<th style="width:12%;">الفصل</th>' +
-        '<th style="width:15%;">تاريخ التسجيل</th></tr>';
-      _openPrintWin('قائمة الاحتياط',
-        _printHeader(batchNum, today) +
-        '<div class="report-title"><h2>قائمة الطلاب في قائمة الاحتياط (بالترتيب)</h2></div>' +
-        _buildPages(thead, rowsArr) + _printSignature()
-      );
-    } else if (type === 'individual_reports') {
-      const studentIds = window.currentStudents.map(s => s.id);
-      const { data: allEvals, error: evErr } = await supabase
-        .from('evaluations')
-        .select('*')
-        .in('student_id', studentIds)
-        .order('eval_date', { ascending: true });
+        } else if (type === 'final') {
+          titleText = 'التقرير الختامي';
+          const rowsArr = window.currentStudents.map(function(s, i) {
+            const score = (window.currentScores || {})[s.id] || 0;
+            let ev = score > 60 ? 'ممتاز ومتقن' : (score > 30 ? 'جيد جداً وثابت' : 'جيد');
+            return '<tr><td class="name-cell"><strong>' + (i+1) + '- ' + s.full_name + '</strong></td>' +
+              '<td>' + ev + '</td><td>مُقيَّم</td><td><strong>' + score + ' نقطة</strong></td></tr>';
+          });
+          const thead = '<tr><th style="width:30%;text-align:right;padding-right:10px;">اسم الطالب</th><th style="width:25%;">التقييم العام</th><th style="width:15%;">الحالة</th><th style="width:30%;">مجموع النقاط</th></tr>';
+          bodyContentHTML = _printHeader(batchNum, today) + '<div class="report-title"><h2>التقرير الختامي المقيَّم والمجمَّع لطلاب الحلقة</h2></div>' + _buildPages(thead, rowsArr) + _printSignature();
 
-      if (evErr) return alert('خطأ في تحميل سجلات الطلاب.');
-      if (!allEvals || allEvals.length === 0) return alert('لا توجد سجلات تقييم منجزة حالياً.');
+        } else if (type === 'roster') {
+          titleText = 'بيان المشاركين';
+          const sorted = window.currentStudents.slice().sort(function(a, b) {
+            if ((a.grade||'') === (b.grade||'')) return (a.classroom||a.class_number||'').toString().localeCompare((b.classroom||b.class_number||'').toString());
+            return (a.grade||'').localeCompare(b.grade||'');
+          });
+          const rowsArr = sorted.map(function(s, i) {
+            return '<tr><td class="name-cell"><strong>' + (i+1) + '- ' + s.full_name + '</strong></td><td dir="ltr">' + (s.national_id||'-') + '</td><td>' + (s.grade||'-') + '</td><td>' + (s.classroom||s.class_number||'-') + '</td><td>' + (s.nationality||'-') + '</td></tr>';
+          });
+          const thead = '<tr><th style="width:28%;text-align:right;padding-right:10px;">اسم الطالب</th><th style="width:22%;">الهوية الوطنية</th><th style="width:17%;">الصف</th><th style="width:17%;">الفصل</th><th style="width:16%;">الجنسية</th></tr>';
+          bodyContentHTML = _printHeader(batchNum, today) + '<div class="report-title"><h2>بيان بأسماء الطلاب المشاركين في الدفعة</h2></div>' + _buildPages(thead, rowsArr) + _printSignature();
 
-      // Group by student
-      const evalMap = {};
-      allEvals.forEach(ev => {
-        if (!evalMap[ev.student_id]) evalMap[ev.student_id] = [];
-        evalMap[ev.student_id].push(ev);
-      });
+        } else if (type === 'waitlist') {
+          titleText = 'قائمة الاحتياط';
+          const waitlist = window.allStudents.filter(s => s.status === 'waitlisted').sort((a,b) => new Date(a.created_at) - new Date(b.created_at));
+          if (waitlist.length === 0) { printWin.close(); return alert('قائمة الاحتياط فارغة حالياً.'); }
+          const rowsArr = waitlist.map(function(s, i) {
+            return '<tr><td>' + (i+1) + '</td><td class="name-cell"><strong>' + s.full_name + '</strong></td><td>' + (s.phone || '-') + '</td><td>' + (s.grade || '-') + '</td><td>' + (s.classroom || s.class_number || '-') + '</td><td>' + new Date(s.created_at).toLocaleDateString('ar-SA') + '</td></tr>';
+          });
+          const thead = '<tr><th>الأولوية</th><th>الاسم</th><th>الجوال</th><th>الصف</th><th>الفصل</th><th>تاريخ الطلب</th></tr>';
+          bodyContentHTML = _printHeader(batchNum, today) + '<div class="report-title"><h2>قائمة الطلاب في قائمة الاحتياط (بالترتيب)</h2></div>' + _buildPages(thead, rowsArr) + _printSignature();
 
-      let fullContentHTML = '';
-      window.currentStudents.forEach((student, idx) => {
-        const studentEvals = evalMap[student.id] || [];
-        const rowsArr = studentEvals.map(ev => `
-          <tr>
-            <td>${ev.eval_date}</td>
-            <td>${ev.attendance_status || 'حاضر'}</td>
-            <td>${ev.track || '-'}</td>
-            <td>${ev.performance || '-'}</td>
-            <td>${ev.tajweed || '-'}</td>
-            <td>${ev.pages_count || '0'}</td>
-            <td class="name-cell">${ev.memorized_part || '-'}</td>
-            <td class="name-cell">${ev.notes || '-'}</td>
-          </tr>
-        `);
+        } else if (type === 'individual_reports') {
+          titleText = 'تقارير الإنجاز التفصيلية';
+          const studentIds = window.currentStudents.map(s => s.id);
+          const { data: allEvals, error: evErr } = await supabase.from('evaluations').select('*').in('student_id', studentIds).order('eval_date', { ascending: true });
+          if (evErr) { printWin.close(); return alert('خطأ في تحميل سجلات الطلاب.'); }
 
-        const thead = `
-          <tr>
-            <th style="width:10%;">التاريخ</th>
-            <th style="width:10%;">الحضور</th>
-            <th style="width:12%;">المسار</th>
-            <th style="width:10%;">الأداء</th>
-            <th style="width:12%;">رتبة التجويد</th>
-            <th style="width:8%;">الصفحات</th>
-            <th style="width:19%;">السور والآيات</th>
-            <th style="width:19%;">الملاحظات</th>
-          </tr>
-        `;
+          const evalMap = {};
+          (allEvals || []).forEach(ev => { if (!evalMap[ev.student_id]) evalMap[ev.student_id] = []; evalMap[ev.student_id].push(ev); });
 
-        // Each student on a new page
-        fullContentHTML += `
-          <div style="page-break-after: always; padding-top: 10px;">
-            ${_printHeader(batchNum, today)}
-            <div class="report-title">
-              <h2>تقرير سجل إنجاز الطالب: ${student.full_name}</h2>
-              <p style="margin-top:5px; font-weight:bold; color:#555;">الصف: ${student.grade || '-'} | الفصل: ${student.class_number || '-'}</p>
-            </div>
-            <table>
-              <thead>${thead}</thead>
-              <tbody>${rowsArr.length ? rowsArr.join('') : '<tr><td colspan="8" style="padding:30px;">لا يوجد سجلات تقييم لهذا الطالب حتى الآن</td></tr>'}</tbody>
-            </table>
-            ${_printSignature()}
-          </div>
-        `;
-      });
+          let fullContentHTML = '';
+          window.currentStudents.forEach((student) => {
+            const studentEvals = evalMap[student.id] || [];
+            const rowsArr = studentEvals.map(ev => `<tr><td>${ev.eval_date}</td><td>${ev.attendance_status || 'حاضر'}</td><td>${ev.track || '-'}</td><td>${ev.performance || '-'}</td><td>${ev.tajweed || '-'}</td><td>${ev.pages_count || '0'}</td><td class="name-cell">${ev.memorized_part || '-'}</td><td class="name-cell">${ev.notes || '-'}</td></tr>`);
+            const thead = '<tr><th style="width:10%;">التاريخ</th><th style="width:10%;">الحضور</th><th style="width:12%;">المسار</th><th style="width:10%;">الأداء</th><th style="width:12%;">تجويد</th><th style="width:8%;">صفحات</th><th style="width:19%;">السور/الآيات</th><th style="width:19%;">الملاحظات</th></tr>';
+            fullContentHTML += `<div style="page-break-after: always; padding-top: 10px;">${_printHeader(batchNum, today)}<div class="report-title"><h2>تقرير سجل إنجاز الطالب: ${student.full_name}</h2><p style="margin-top:5px; font-weight:bold; color:#555;">الصف: ${student.grade || '-'} | الفصل: ${student.classroom || student.class_number || '-'}</p></div>${_buildPages(thead, rowsArr)}${_printSignature()}</div>`;
+          });
+          bodyContentHTML = fullContentHTML;
+        }
 
-      _openPrintWin('تقارير إنجاز الطلاب التفصيلية', fullContentHTML);
+        _openPrintWin(titleText, bodyContentHTML, printWin);
+    } catch (e) {
+        printWin.close();
+        alert('حدث خطأ فني أثناء تجهيز التقرير.');
+    }
     }
   };
 
