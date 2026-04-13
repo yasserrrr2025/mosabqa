@@ -323,6 +323,9 @@
             <button onclick="window.exportToExcel()" class="action-btn" style="background: linear-gradient(135deg, #10b981, #059669); color: #fff;">
               📊 تصدير البيانات (Excel)
             </button>
+            <button onclick="window.preparePrint('individual_reports')" class="action-btn" style="background: linear-gradient(135deg, #7c3aed, #6d28d9); color: #fff;">
+              📑 تقارير الإجاز التفصيلية
+            </button>
             <button onclick="window.preparePrint('final')" class="action-btn" style="background: linear-gradient(135deg, var(--color-gold), var(--color-gold-dark)); color: #fff;">
               🏆 التقرير الختامي
             </button>
@@ -373,12 +376,19 @@
             </div>
 
             <h4 style="margin-top: 25px; margin-bottom: 10px; color: #92400e;">⏳ قائمة الاحتياط (الانتظار)</h4>
+            <div style="margin-bottom: 15px;">
+              <button onclick="window.preparePrint('waitlist')" class="action-btn" style="min-width:180px; background:#f8fafc; border:2px solid #e2e8f0; color:#92400e; font-size:0.85rem; padding:10px;">
+                🖨️ طباعة قائمة الاحتياط
+              </button>
+            </div>
             <div style="overflow-x: auto;">
               <table class="mgmt-table">
                 <thead>
                   <tr>
-                    <th width="40%">الاسم</th>
-                    <th width="30%">تاريخ التسجيل</th>
+                    <th width="10%">#</th>
+                    <th width="30%">الاسم</th>
+                    <th width="15%">الصف</th>
+                    <th width="15%">الفصل</th>
                     <th width="30%">إجراء</th>
                   </tr>
                 </thead>

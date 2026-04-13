@@ -196,15 +196,15 @@ document.addEventListener('DOMContentLoaded', () => {
       waitBody.innerHTML = waitlist.length ? waitlist.map((s, i) => `
       <tr>
         <td style="text-align:center;"><span style="background:#f59e0b; color:#fff; padding:2px 8px; border-radius:5px; font-weight:bold;">${i+1}</span></td>
-        <td><strong>${s.full_name}</strong><br><small style="color:#999;">${new Date(s.created_at).toLocaleDateString('ar-SA')}</small></td>
-        <td style="text-align:center;">
-          ${i === 0 
-            ? `<button onclick="window.teacherPromoteStudent('${s.id}', '${s.full_name}')" style="background:#16a34a; color:#fff; border:none; padding:8px 14px; border-radius:8px; cursor:pointer; font-weight:bold; width:100%;">✅ ترقية (الأولوية)</button>` 
-            : `<span style="color:#999; font-size:0.8rem;">بانتظار المقعد..</span>`
-          }
+        <td><strong>${s.full_name}</strong><br><small style="color:#999; font-size:0.75rem;">🗓️ ${new Date(s.created_at).toLocaleDateString('ar-SA')}</small></td>
+        <td style="text-align:center;">${s.grade || '-'}</td>
+        <td style="text-align:center;">${s.class_number || '-'}</td>
+        <td style="text-align:center; display:flex; gap:5px; justify-content:center;">
+          <button onclick="window.teacherPromoteStudent('${s.id}', '${s.full_name}')" style="background:#16a34a; color:#fff; border:none; padding:6px 10px; border-radius:8px; cursor:pointer; font-weight:bold; font-size:0.75rem;">✅ ترقية</button>
+          <button onclick="window.teacherDeleteStudent('${s.id}', '${s.full_name}')" style="background:#fee2e2; color:#dc2626; border:none; padding:6px 10px; border-radius:8px; cursor:pointer; font-weight:bold; font-size:0.75rem;">🗑️ حذف</button>
         </td>
       </tr>
-    `).join('') : '<tr><td colspan="3" style="text-align:center; padding:20px; color:#999;">لا يوجد طلاب احتياط حالياً</td></tr>';
+    `).join('') : '<tr><td colspan="5" style="text-align:center; padding:20px; color:#999;">لا يوجد طلاب احتياط حالياً</td></tr>';
   }
 
   // Toggle logic
@@ -378,7 +378,6 @@ document.addEventListener('DOMContentLoaded', () => {
       'td { padding: 9px 8px; border: 1px solid #a0aec0; font-size: 10pt; text-align: center; vertical-align: middle; }',
       'td.name-cell { text-align: right; }',
       'tbody tr:nth-child(even) { background-color: #f8fafc !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }',
-      /* page splitting handled by JS */
       '.signature { display: flex; justify-content: space-between; margin-top: 45px; padding: 0 10px; font-size: 11pt; font-weight: bold; page-break-inside: avoid; }',
       '.signature div { text-align: center; line-height: 4; }'
     ].join(' ');
@@ -387,15 +386,11 @@ document.addEventListener('DOMContentLoaded', () => {
   function _printHeader(batchNum, dateStr) {
     return '<div class="header">' +
       '<div class="header-side" style="text-align:right;">' +
-        'المملكة العربية السعودية<br>' +
-        'وزارة التعليم<br>' +
-        'إدارة التعليم بمحافظة جدة<br>' +
-        'مدرسة عماد الدين زنكي المتوسطة' +
+        'المملكة العربية السعودية<br>وزارة التعليم<br>إدارة التعليم بمحافظة جدة<br>مدرسة عماد الدين زنكي المتوسطة' +
       '</div>' +
       '<div class="header-center"><img src="/new-logo.png" alt="logo"></div>' +
       '<div class="header-side" style="text-align:left;">' +
-        'رقم الدفعة: ' + batchNum + '<br>' +
-        'تاريخ التقرير: ' + dateStr +
+        'رقم الدفعة: ' + batchNum + '<br>تاريخ التقرير: ' + dateStr +
       '</div>' +
     '</div>';
   }
@@ -406,27 +401,6 @@ document.addEventListener('DOMContentLoaded', () => {
       '<div>الختم الرسمي<br>....................</div>' +
       '<div>مدير المدرسة<br>عابد عبيد الجدعاني</div>' +
     '</div>';
-  }
-
-
-  function _buildPages(theadHTML, rowsArr, perPage) {
-    perPage = perPage || 9;
-    if (!rowsArr || rowsArr.length === 0) {
-      return '<table><thead>' + theadHTML + '</thead><tbody>' +
-        '<tr><td colspan="10" style="text-align:center;color:#999;">لا يوجد بيانات</td></tr>' +
-        '</tbody></table>';
-    }
-    var pages = [];
-    for (var i = 0; i < rowsArr.length; i += perPage) {
-      pages.push(rowsArr.slice(i, i + perPage));
-    }
-    return pages.map(function(chunk, idx) {
-      var isLast = idx === pages.length - 1;
-      return '<div style="page-break-after:' + (isLast ? 'auto' : 'always') + ';">' +
-        '<table><thead>' + theadHTML + '</thead>' +
-        '<tbody>' + chunk.join('') + '</tbody></table>' +
-        '</div>';
-    }).join('');
   }
 
   function _openPrintWin(titleText, bodyContent) {
@@ -441,65 +415,17 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function _buildPages(theadHTML, rowsArr) {
-    var perPage = 9;
+    const perPage = 9;
     if (!rowsArr || rowsArr.length === 0) {
-      return '<table><thead>' + theadHTML + '</thead><tbody>' +
-        '<tr><td colspan="10" style="text-align:center;color:#999;">لا يوجد بيانات</td></tr>' +
-        '</tbody></table>';
+      return '<table><thead>' + theadHTML + '</thead><tbody><tr><td colspan="10" style="text-align:center;color:#999;padding:40px;">لا يوجد بيانات للعرض</td></tr></tbody></table>';
     }
-    var pages = [];
-    for (var i = 0; i < rowsArr.length; i += perPage) pages.push(rowsArr.slice(i, i + perPage));
-    return pages.map(function(chunk, idx) {
-      var isLast = idx === pages.length - 1;
-      return '<div style="page-break-after:' + (isLast ? 'auto' : 'always') + ';">' +
-        '<table><thead>' + theadHTML + '</thead>' +
-        '<tbody>' + chunk.join('') + '</tbody></table></div>';
-    }).join('');
-  }
-
-  function _printCSS() {
-    return [
-      '@page { margin: 8mm; size: A4 portrait; }',
-      '* { box-sizing: border-box; margin: 0; padding: 0; }',
-      "body { font-family: Cairo, sans-serif; background: #fff; color: #111; direction: rtl; }",
-      '.header { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 12px; border-bottom: 2px solid #ccc; margin-bottom: 15px; }',
-      '.header-side { font-weight: bold; font-size: 10pt; line-height: 1.8; }',
-      '.header-center { text-align: center; flex-grow: 1; }',
-      '.header-center img { height: 65px; object-fit: contain; }',
-      '.report-title { text-align: center; margin: 10px 0 15px; }',
-      '.report-title h2 { font-size: 16pt; display: inline-block; border-bottom: 2px solid #888; padding-bottom: 6px; }',
-      'table { width: 100%; border-collapse: collapse; }',
-      'th { background-color: #f1f5f9 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; font-weight: 800; font-size: 11pt; padding: 10px 8px; border: 1px solid #a0aec0; text-align: center; }',
-      'td { padding: 9px 8px; border: 1px solid #a0aec0; font-size: 10pt; text-align: center; vertical-align: middle; }',
-      'td.name-cell { text-align: right; }',
-      'tr { page-break-inside: avoid; }',
-      'tbody tr:nth-child(even) { background-color: #f8fafc !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }',
-      '.signature { display: flex; justify-content: space-between; margin-top: 45px; padding: 0 10px; font-size: 11pt; font-weight: bold; page-break-inside: avoid; }',
-      '.signature div { text-align: center; line-height: 4; }'
-    ].join(' ');
-  }
-
-  function _printHeader(batchNum, dateStr) {
-    return '<div class="header">' +
-      '<div class="header-side" style="text-align:right;">' +
-        'المملكة العربية السعودية<br>' +
-        'وزارة التعليم<br>' +
-        'إدارة التعليم بمحافظة جدة<br>' +
-        'مدرسة عماد الدين زنكي المتوسطة' +
-      '</div>' +
-      '<div class="header-center"><img src="/new-logo.png" alt="logo"></div>' +
-      '<div class="header-side" style="text-align:left;">' +
-        'رقم الدفعة: ' + batchNum + '<br>' +
-        'تاريخ التقرير: ' + dateStr +
-      '</div></div>';
-  }
-
-  function _printSignature() {
-    return '<div class="signature">' +
-      '<div>المعلم<br>فهد علي آل رده</div>' +
-      '<div>الختم الرسمي<br>....................</div>' +
-      '<div>مدير المدرسة<br>عابد عبيد الجدعاني</div>' +
-    '</div>';
+    const chunks = [];
+    for (let i = 0; i < rowsArr.length; i += perPage) chunks.push(rowsArr.slice(i, i + perPage));
+    return chunks.map((chunk, idx) => `
+      <div style="page-break-after: ${idx === chunks.length - 1 ? 'auto' : 'always'};">
+        <table><thead>${theadHTML}</thead><tbody>${chunk.join('')}</tbody></table>
+      </div>
+    `).join('');
   }
 
   function _openPrintWin(titleText, bodyContent) {
@@ -513,7 +439,7 @@ document.addEventListener('DOMContentLoaded', () => {
     w.document.open(); w.document.write(html); w.document.close();
   }
 
-  window.preparePrint = function(type) {
+  window.preparePrint = async function(type) {
     if (!window.currentStudents || window.currentStudents.length === 0) return alert('لا يوجد طلاب للطباعة.');
     const bEl = document.getElementById('batch-number-badge');
     const batchNum = bEl ? bEl.textContent.trim() : '';
@@ -578,6 +504,92 @@ document.addEventListener('DOMContentLoaded', () => {
         '<div class="report-title"><h2>بيان بأسماء الطلاب المشاركين في الدفعة</h2></div>' +
         _buildPages(thead, rowsArr) + _printSignature()
       );
+    } else if (type === 'waitlist') {
+      const waitlist = window.allStudents.filter(s => s.status === 'waitlisted').sort((a,b) => new Date(a.created_at) - new Date(b.created_at));
+      if (waitlist.length === 0) return alert('قائمة الاحتياط فارغة حالياً.');
+      
+      const rowsArr = waitlist.map(function(s, i) {
+        return '<tr><td>' + (i+1) + '</td><td class="name-cell"><strong>' + s.full_name + '</strong></td>' +
+          '<td>' + (s.phone || '-') + '</td>' +
+          '<td>' + (s.grade || '-') + '</td>' +
+          '<td>' + (s.class_number || '-') + '</td>' +
+          '<td>' + new Date(s.created_at).toLocaleDateString('ar-SA') + '</td></tr>';
+      });
+      const thead = '<tr>' +
+        '<th style="width:10%;">الأولوية</th>' +
+        '<th style="width:30%;text-align:right;padding-right:10px;">اسم الطالب</th>' +
+        '<th style="width:20%;">رقم الجوال</th>' +
+        '<th style="width:13%;">الصف</th>' +
+        '<th style="width:12%;">الفصل</th>' +
+        '<th style="width:15%;">تاريخ التسجيل</th></tr>';
+      _openPrintWin('قائمة الاحتياط',
+        _printHeader(batchNum, today) +
+        '<div class="report-title"><h2>قائمة الطلاب في قائمة الاحتياط (بالترتيب)</h2></div>' +
+        _buildPages(thead, rowsArr) + _printSignature()
+      );
+    } else if (type === 'individual_reports') {
+      const studentIds = window.currentStudents.map(s => s.id);
+      const { data: allEvals, error: evErr } = await supabase
+        .from('evaluations')
+        .select('*')
+        .in('student_id', studentIds)
+        .order('eval_date', { ascending: true });
+
+      if (evErr) return alert('خطأ في تحميل سجلات الطلاب.');
+      if (!allEvals || allEvals.length === 0) return alert('لا توجد سجلات تقييم منجزة حالياً.');
+
+      // Group by student
+      const evalMap = {};
+      allEvals.forEach(ev => {
+        if (!evalMap[ev.student_id]) evalMap[ev.student_id] = [];
+        evalMap[ev.student_id].push(ev);
+      });
+
+      let fullContentHTML = '';
+      window.currentStudents.forEach((student, idx) => {
+        const studentEvals = evalMap[student.id] || [];
+        const rowsArr = studentEvals.map(ev => `
+          <tr>
+            <td>${ev.eval_date}</td>
+            <td>${ev.attendance || 'حاضر'}</td>
+            <td>${ev.track || '-'}</td>
+            <td>${ev.performance || '-'}</td>
+            <td>${ev.pages || '0'}</td>
+            <td class="name-cell">${ev.memo || '-'}</td>
+            <td class="name-cell">${ev.notes || '-'}</td>
+          </tr>
+        `);
+
+        const thead = `
+          <tr>
+            <th style="width:12%;">التاريخ</th>
+            <th style="width:10%;">الحضور</th>
+            <th style="width:12%;">المسار</th>
+            <th style="width:12%;">الأداء</th>
+            <th style="width:8%;">الصفحات</th>
+            <th style="width:23%;">السور والآيات</th>
+            <th style="width:23%;">الملاحظات</th>
+          </tr>
+        `;
+
+        // Each student on a new page
+        fullContentHTML += `
+          <div style="page-break-after: always; padding-top: 10px;">
+            ${_printHeader(batchNum, today)}
+            <div class="report-title">
+              <h2>تقرير سجل إنجاز الطالب: ${student.full_name}</h2>
+              <p style="margin-top:5px; font-weight:bold; color:#555;">الصف: ${student.grade || '-'} | الفصل: ${student.class_number || '-'}</p>
+            </div>
+            <table>
+              <thead>${thead}</thead>
+              <tbody>${rowsArr.length ? rowsArr.join('') : '<tr><td colspan="7" style="padding:30px;">لا يوجد سجلات تقييم لهذا الطالب حتى الآن</td></tr>'}</tbody>
+            </table>
+            ${_printSignature()}
+          </div>
+        `;
+      });
+
+      _openPrintWin('تقارير إنجاز الطلاب التفصيلية', fullContentHTML);
     }
   };
 
