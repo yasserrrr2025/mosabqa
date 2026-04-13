@@ -655,5 +655,128 @@ document.addEventListener('DOMContentLoaded', () => {
     const filename = `تقرير_طلاب_الحلقة_${new Date().toISOString().split('T')[0]}.xlsx`;
     XLSX.writeFile(workbook, filename);
   };
+
+  /**
+   * Random Student Picker Logic
+   */
+  let randomPool = [];
+  window.pickRandomStudent = function() {
+      if (!window.currentStudents || window.currentStudents.length === 0) return alert('لا يوجد طلاب محملون حالياً.');
+      
+      // Initialize or refill pool if empty
+      if (randomPool.length === 0) {
+          randomPool = [...window.currentStudents];
+      }
+
+      const randomIndex = Math.floor(Math.random() * randomPool.length);
+      const chosen = randomPool.splice(randomIndex, 1)[0];
+
+      // Highlight the chosen student card
+      const card = document.getElementById(`card-${chosen.id}`);
+      if (card) {
+          card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          card.style.transition = 'all 0.5s ease';
+          card.style.boxShadow = '0 0 40px rgba(245, 158, 11, 0.8)';
+          card.style.border = '4px solid #f59e0b';
+          card.style.transform = 'scale(1.05)';
+          
+          setTimeout(() => {
+              card.style.boxShadow = '';
+              card.style.border = '';
+              card.style.transform = '';
+          }, 4000);
+      }
+
+      const remaining = randomPool.length;
+      alert(`🎲 الطالب المختار: ${chosen.full_name}\n\n(تبقى ${remaining} طلاب لم يتم اختيارهم في هذه الجولة)`);
+  };
+
+  /**
+   * Honor Roll Poster Generator (Canvas)
+   */
+  window.generateHonorPoster = function() {
+      if (!window.currentStudents || window.currentStudents.length === 0) return alert('لا يوجد طلاب.');
+      // Scores might have been calculated during Excel export or daily view
+      if (!window.currentScores) window.currentScores = {}; 
+
+      // Get top 3
+      const sorted = [...window.currentStudents].sort((a,b) => (window.currentScores[b.id]||0) - (window.currentScores[a.id]||0)).slice(0, 3);
+      if (sorted.length === 0) return alert('لا توجد درجات كافية لتوليد قائمة المتفوقين.');
+
+      const modal = document.getElementById('poster-modal');
+      const canvas = document.getElementById('honor-canvas');
+      const ctx = canvas.getContext('2d');
+      modal.style.display = 'flex';
+
+      // --- DRAW POSTER ---
+      // 1. Background Gradient
+      const grad = ctx.createLinearGradient(0, 0, 0, 800);
+      grad.addColorStop(0, '#1e293b');
+      grad.addColorStop(1, '#0f172a');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 600, 800);
+
+      // 2. Ornaments
+      ctx.strokeStyle = 'rgba(251, 191, 36, 0.1)';
+      ctx.lineWidth = 2;
+      for(let i=0; i<600; i+=40) {
+        ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, 800); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(600, i); ctx.stroke();
+      }
+
+      // 3. Header
+      ctx.fillStyle = '#fbbf24';
+      ctx.font = 'bold 36px Cairo';
+      ctx.textAlign = 'center';
+      ctx.fillText('🏆 فرسان التميز للأسبوع 🏆', 300, 100);
+      
+      ctx.fillStyle = '#fff';
+      ctx.font = '24px Cairo';
+      ctx.fillText('حلقة أجيال القرآن - مدرسة عماد الدين زنكي', 300, 150);
+      
+      ctx.strokeStyle = '#fbbf24';
+      ctx.lineWidth = 3;
+      ctx.strokeRect(50, 50, 500, 700);
+
+      // 4. Draw Top Students
+      const colors = ['#fbbf24', '#cbd5e1', '#cd7f32']; // Gold, Silver, Bronze
+      const icons = ['🥇', '🥈', '🥉'];
+      
+      sorted.forEach((s, idx) => {
+          const y = 280 + (idx * 150);
+          
+          // Background Bar
+          ctx.fillStyle = 'rgba(255,255,255,0.05)';
+          ctx.fillRect(50, y-50, 500, 120);
+          
+          // Icon & Name
+          ctx.fillStyle = colors[idx];
+          ctx.font = 'bold 30px Cairo';
+          ctx.fillText(`${icons[idx]} ${s.full_name}`, 300, y);
+          
+          // Score
+          ctx.fillStyle = '#fff';
+          ctx.font = '20px Cairo';
+          ctx.fillText(`مجموع النقاط: ${window.currentScores[s.id] || 0} نقطة`, 300, y + 45);
+      });
+
+      // 5. Footer
+      ctx.fillStyle = 'rgba(255,255,255,0.5)';
+      ctx.font = '18px Cairo';
+      const today = new Date().toLocaleDateString('ar-SA');
+      ctx.fillText(`تاريخ الإصدار: ${today}`, 300, 720);
+      ctx.fillText('بارك الله في جهودكم يا أشبال القرآن', 300, 750);
+  };
+
+  /**
+   * Download the generated canvas as PNG
+   */
+  window.downloadPoster = function() {
+      const canvas = document.getElementById('honor-canvas');
+      const link = document.createElement('a');
+      link.download = `honor-roll-${new Date().getTime()}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+  };
  });
 

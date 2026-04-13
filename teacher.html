@@ -323,12 +323,30 @@
             <button onclick="window.exportToExcel()" class="action-btn" style="background: linear-gradient(135deg, #10b981, #059669); color: #fff;">
               📊 تصدير البيانات (Excel)
             </button>
+            <button onclick="window.pickRandomStudent()" class="action-btn" style="background: linear-gradient(135deg, #f59e0b, #d97706); color: #fff;">
+              🎲 اختيار طالب عشوائي
+            </button>
+            <button onclick="window.generateHonorPoster()" class="action-btn" style="background: linear-gradient(135deg, #059669, #047857); color: #fff;">
+              🏆 توليد ملصق التميز
+            </button>
             <button onclick="window.preparePrint('individual_reports')" class="action-btn" style="background: linear-gradient(135deg, #7c3aed, #6d28d9); color: #fff;">
-              📑 تقارير الإجاز التفصيلية
+              📑 تقارير الإنجاز التفصيلية
             </button>
             <button onclick="window.preparePrint('final')" class="action-btn" style="background: linear-gradient(135deg, var(--color-gold), var(--color-gold-dark)); color: #fff;">
               🏆 التقرير الختامي
             </button>
+
+        <!-- Honor Poster Modal -->
+        <div id="poster-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:2000; align-items:center; justify-content:center; flex-direction:column; padding:20px;">
+          <div style="background:white; padding:15px; border-radius:15px; max-width:500px; width:100%; text-align:center;">
+             <h3 style="margin-bottom:15px;">🖼️ ملصق التميز للواتساب</h3>
+             <canvas id="honor-canvas" width="600" height="800" style="width:100%; max-width:350px; border-radius:10px; box-shadow:0 10px 30px rgba(0,0,0,0.3); margin-bottom:15px;"></canvas>
+             <div style="display:flex; gap:10px; justify-content:center;">
+                <button onclick="window.downloadPoster()" class="action-btn" style="background:var(--color-success); color:white; min-width:120px;">📩 تحميل الصورة</button>
+                <button onclick="document.getElementById('poster-modal').style.display='none'" class="action-btn" style="background:#ef4444; color:white; min-width:120px;">❌ إغلاق</button>
+             </div>
+          </div>
+        </div>
           </div>
 
           <!-- Section Title -->
