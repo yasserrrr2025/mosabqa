@@ -3,6 +3,25 @@ const supabaseUrl = 'https://oypfhzkbibrpobrvzwtn.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im95cGZoemtiaWJycG9icnZ6d3RuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUxMDY3ODAsImV4cCI6MjA5MDY4Mjc4MH0.pgHCJdvOxOD-btGMmpSIiRblk8o82VxQ2Z36rd7HyGg';
 const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
+// Helper for Saudi (Arabic) local date string (YYYY-MM-DD)
+function getSaudiDateStr() {
+    const today = new Date();
+    const saudiTime = new Date(today.toLocaleString("en-US", {timeZone: "Asia/Riyadh"}));
+    const Y = saudiTime.getFullYear();
+    const M = String(saudiTime.getMonth() + 1).padStart(2, '0');
+    const D = String(saudiTime.getDate()).padStart(2, '0');
+    return `${Y}-${M}-${D}`;
+}
+
+// Global score calculation logic
+function calculateDayScore(perf, pages) {
+    let p = 0;
+    if (perf === 'ممتاز') p = 3;
+    else if (perf === 'جيد جداً') p = 2;
+    else if (perf === 'جيد') p = 1;
+    return p + (parseInt(pages) || 0);
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   const loginBtn = document.getElementById('login-btn');
   const passwordInput = document.getElementById('teacherPassword');
@@ -10,7 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const dashboardSection = document.getElementById('dashboard-section');
   const errorMsg = document.getElementById('login-error');
   const currentBatchBadge = document.getElementById('batch-number-badge');
-  
+
   // Display today's date
   const dateDisp = document.getElementById('current-date-display');
   if (dateDisp) {
@@ -288,13 +307,7 @@ document.addEventListener('DOMContentLoaded', () => {
       } catch(err) { alert('خطأ في الترقية.'); }
   };
 
-  function calculateDayScore(perf, pages) {
-      let p = 0;
-      if (perf === 'ممتاز') p = 3;
-      else if (perf === 'جيد جداً') p = 2;
-      else if (perf === 'جيد') p = 1;
-      return p + (parseInt(pages) || 0);
-  }
+
 
   window.saveEval = async function(studentId) {
     const btn = document.getElementById(`btn-${studentId}`);
@@ -351,14 +364,6 @@ document.addEventListener('DOMContentLoaded', () => {
   /**
    * Helper to get Current Date in Saudi Arabia (KSA) as YYYY-MM-DD
    */
-  function getSaudiDateStr() {
-      const today = new Date();
-      const saudiTime = new Date(today.toLocaleString("en-US", {timeZone: "Asia/Riyadh"}));
-      const Y = saudiTime.getFullYear();
-      const M = String(saudiTime.getMonth() + 1).padStart(2, '0');
-      const D = String(saudiTime.getDate()).padStart(2, '0');
-      return `${Y}-${M}-${D}`;
-  }
 
   // ======= Shared print utilities =======
   function _printCSS() {
@@ -389,7 +394,7 @@ document.addEventListener('DOMContentLoaded', () => {
       '<div class="header-side" style="text-align:right;">' +
         'المملكة العربية السعودية<br>وزارة التعليم<br>إدارة التعليم بمحافظة جدة<br>مدرسة عماد الدين زنكي المتوسطة' +
       '</div>' +
-      '<div class="header-center"><img src="/new-logo.png" alt="logo"></div>' +
+      '<div class="header-center"><img src="new-logo.png" alt="logo"></div>' +
       '<div class="header-side" style="text-align:left;">' +
         'رقم الدفعة: ' + batchNum + '<br>تاريخ التقرير: ' + dateStr +
       '</div>' +
@@ -404,16 +409,6 @@ document.addEventListener('DOMContentLoaded', () => {
     '</div>';
   }
 
-  function _openPrintWin(titleText, bodyContent) {
-    const gFont = 'https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;800&family=Amiri:wght@400;700&display=swap';
-    const html = '<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><title>' + titleText + '</title>' +
-      '<link href="' + gFont + '" rel="stylesheet">' +
-      '<style>' + _printCSS() + '</style></head><body>' + bodyContent +
-      '<scr' + 'ipt>window.onload=function(){window.print();window.onafterprint=function(){window.close();};};<' + '/script>' +
-      '</body></html>';
-    const w = window.open('', '_blank', 'width=900,height=700');
-    w.document.open(); w.document.write(html); w.document.close();
-  }
 
   function _buildPages(theadHTML, rowsArr) {
     const perPage = 9;
