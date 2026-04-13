@@ -430,27 +430,36 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function _openPrintWin(titleText, bodyContent) {
-    // Mobile-friendly inline printing approach
-    const container = document.getElementById('print-report-area');
-    container.innerHTML = bodyContent;
+    const modal = document.getElementById('print-viewer-modal');
+    const content = document.getElementById('print-content-actual');
     
-    // Temporarily title the page for print
+    content.innerHTML = bodyContent;
+    modal.style.display = 'flex';
+    
+    window.currentPrintTitle = titleText;
+    // Add scroll to top of modal
+    modal.scrollTop = 0;
+  }
+
+  window.triggerFinalPrint = function() {
     const oldTitle = document.title;
-    document.title = titleText;
-    
-    // Add class to body to hide everything else
+    document.title = window.currentPrintTitle || 'Report';
     document.body.classList.add('is-printing');
     
-    // Trigger print
     window.print();
     
-    // Cleanup after printing dialog closes
+    // We don't auto-close modal here so user can print again if needed
+    // But we remove the printing class
     setTimeout(() => {
-      document.body.classList.remove('is-printing');
-      document.title = oldTitle;
-      container.innerHTML = '';
+        document.body.classList.remove('is-printing');
+        document.title = oldTitle;
     }, 1000);
-  }
+  };
+
+  window.closePrintViewer = function() {
+    document.getElementById('print-viewer-modal').style.display = 'none';
+    document.getElementById('print-content-actual').innerHTML = '';
+  };
 
   window.preparePrint = async function(type) {
     if (!window.currentStudents || window.currentStudents.length === 0) return alert('لا يوجد طلاب للطباعة.');

@@ -283,21 +283,21 @@
       }
 
       /* ======= Print Engine Styling ======= */
-      #print-report-area { display: none; }
       @media print {
         @page { margin: 10mm; size: A4 portrait; }
         
-        body.is-printing .app-container,
+        body.is-printing .no-print,
         body.is-printing .decorative-pattern,
         body.is-printing div[id$="-modal"] { 
           display: none !important; 
         }
-        body.is-printing #print-report-area {
+        body.is-printing #print-content-actual {
           display: block !important;
           width: 100% !important;
           padding: 0; margin: 0;
           direction: rtl !important;
           background: #fff;
+          position: absolute; top: 0; left: 0;
         }
 
         /* Header & Logo */
@@ -333,8 +333,18 @@
     </style>
   </head>
   <body>
-    <!-- Inline Print Container -->
-    <div id="print-report-area"></div>
+    <!-- Print Preview Modal -->
+    <div id="print-viewer-modal" class="no-print" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:9000; overflow-y:auto; padding:20px; flex-direction:column; align-items:center;">
+        <div class="no-print" style="display:flex; gap:15px; margin-bottom:20px; width:100%; max-width:800px; justify-content:center;">
+            <button onclick="window.triggerFinalPrint()" class="action-btn" style="background:var(--color-success); color:white; min-width:180px; font-size:1.1rem; padding:15px;">🖨️ تأكيد الطباعة الآن</button>
+            <button onclick="window.closePrintViewer()" class="action-btn" style="background:#ef4444; color:white; min-width:120px; font-size:1.1rem; padding:15px;">❌ إغلاق المعاينة</button>
+        </div>
+        <div id="print-content-actual" style="background:white; width:210mm; min-height:297mm; padding:10mm; box-shadow:0 0 50px rgba(0,0,0,0.5); border-radius:5px; position:relative; overflow:hidden;">
+            <!-- Report content will be injected here -->
+        </div>
+    </div>
+
+    <!-- Modals -->
     <div class="app-container teacher-card">
       <div class="registration-card" id="main-content">
 
