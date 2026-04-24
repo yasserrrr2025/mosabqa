@@ -529,6 +529,7 @@
       </div>
     </div>
 
+    <!-- Honor Roll Poster Modal -->
     <div id="poster-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:9999; align-items:center; justify-content:center; flex-direction:column; padding:20px;">
       <div style="background:white; padding:15px; border-radius:15px; max-width:500px; width:100%; text-align:center;">
          <h3 style="margin-bottom:15px;">🖼️ ملصق التميز للواتساب</h3>
@@ -540,6 +541,19 @@
       </div>
     </div>
 
+    <!-- Student ID Card Modal -->
+    <div id="id-card-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:9999; align-items:center; justify-content:center; flex-direction:column; padding:20px;">
+      <div style="background:white; padding:20px; border-radius:25px; max-width:500px; width:100%; text-align:center; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);">
+         <h3 style="margin-bottom:15px; color:var(--color-primary-dark);">🪪 بطاقة الطالب الرقمية</h3>
+         <canvas id="id-canvas" width="600" height="400" style="width:100%; max-width:400px; border-radius:15px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); margin-bottom:20px;"></canvas>
+         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+            <button onclick="window.downloadIDImage()" class="action-btn" style="background:var(--color-accent); color:white;">🖼️ حفظ كصورة</button>
+            <button onclick="window.downloadIDPDF()" class="action-btn" style="background:var(--color-gold); color:var(--color-gold-dark);">📄 حفظ PDF</button>
+            <button onclick="document.getElementById('id-card-modal').style.display='none'" class="action-btn" style="background:#ef4444; color:white; grid-column: span 2;">❌ إغلاق</button>
+         </div>
+      </div>
+    </div>
+
     <!-- Floating Modern Navigation (Safe Fix for Scrolling) -->
     <div class="floating-nav no-print">
       <button onclick="document.querySelector('.search-box-modern').scrollIntoView({behavior:'smooth'}); document.getElementById('student-search-v2').focus();" class="fab-btn secondary" title="البحث">🔍</button>
@@ -547,6 +561,7 @@
       <button onclick="window.scrollTo({top:0, behavior:'smooth'})" class="fab-btn secondary" title="للأعلى">☝️</button>
     </div>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     <script type="module" src="src/teacher.js"></script>
   </body>

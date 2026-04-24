@@ -188,10 +188,13 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
           </div>
 
-          <div class="eval-card-row" style="margin-top:20px; border-top: 1px solid #f1f5f9; padding-top:20px; display:flex; flex-direction:column; gap:12px;">
+          <div class="eval-card-row" style="margin-top:20px; border-top: 1px solid #f1f5f9; padding-top:20px; display:flex; flex-direction:column; gap:8px;">
             <input type="text" class="notes-input" id="memo-${student.id}" placeholder="📖 السورة والآيات التي تم تسميعها.." value="${memo}">
             <input type="text" class="notes-input" id="note-${student.id}" placeholder="💡 ملاحظات توجيهية لولي الأمر.." value="${note}">
-            <button class="save-btn" onclick="window.saveEval('${student.id}')" id="btn-${student.id}">✅ اعتماد التقييم</button>
+            <div style="display:grid; grid-template-columns: 2fr 1fr; gap:8px;">
+               <button class="save-btn" onclick="window.saveEval('${student.id}')" id="btn-${student.id}">✅ اعتماد التقييم</button>
+               <button class="save-btn" style="background:#f1f5f9; color:var(--color-primary-dark); border:1px solid #e2e8f0; font-size:0.8rem; padding:10px 5px;" onclick="window.generateStudentID('${student.id}')">🪪 البطاقة</button>
+            </div>
           </div>
         `;
         studentsGrid.appendChild(card);
@@ -775,6 +778,121 @@ document.addEventListener('DOMContentLoaded', () => {
       ctx.font = 'bold 18px Cairo, sans-serif';
       ctx.fillStyle = '#fbbf24';
       ctx.fillText('بارك الله في جهودكم يا أشبال القرآن', 300, 760);
+  };
+
+  /**
+   * Electronic Student ID Card Generator
+   */
+  window.generateStudentID = async function(studentId) {
+      const student = window.currentStudents.find(s => s.id == studentId);
+      if (!student) return alert('خطأ في جلب بيانات الطالب.');
+
+      const modal = document.getElementById('id-card-modal');
+      const canvas = document.getElementById('id-canvas');
+      const ctx = canvas.getContext('2d');
+
+      modal.style.display = 'flex';
+      await document.fonts.ready;
+
+      // 1. Clear and Background
+      ctx.clearRect(0, 0, 600, 400);
+      
+      // Gradient background
+      const grad = ctx.createLinearGradient(0, 0, 600, 400);
+      grad.addColorStop(0, '#1e293b');
+      grad.addColorStop(1, '#334155');
+      ctx.fillStyle = grad;
+      ctx.roundRect = ctx.roundRect || function (x, y, w, h, r) { if (w < 2 * r) r = w / 2; if (h < 2 * r) r = h / 2; ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); return ctx; };
+      
+      ctx.roundRect(0, 0, 600, 400, 25).fill();
+
+      // 2. Artistic Ornaments
+      ctx.strokeStyle = 'rgba(251, 191, 36, 0.1)';
+      ctx.lineWidth = 1;
+      for(let i=0; i<600; i+=30) {
+          ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i-100, 400); ctx.stroke();
+      }
+
+      // Gold accent bar
+      ctx.fillStyle = '#fbbf24';
+      ctx.fillRect(0, 0, 15, 400);
+
+      // 3. School Branding
+      ctx.textAlign = 'right';
+      ctx.fillStyle = '#fbbf24';
+      ctx.font = 'bold 22px Cairo, sans-serif';
+      ctx.fillText('حلقة أجيال القرآن', 560, 50);
+      
+      ctx.fillStyle = 'rgba(255,255,255,0.7)';
+      ctx.font = '600 14px Cairo, sans-serif';
+      ctx.fillText('بمدرسة عماد الدين زنكي المتوسطة', 560, 75);
+
+      // 4. Student Details
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 30px Cairo, sans-serif';
+      ctx.fillText(student.full_name, 560, 140);
+
+      // Detail Rows
+      const details = [
+          { label: 'الصف الدراسي:', value: student.grade || '-' },
+          { label: 'رقم الدفعة:', value: document.getElementById('batch-number-badge')?.textContent || '1' },
+          { label: 'حالة التسجيل:', value: 'طالب معتمد ✅' }
+      ];
+
+      details.forEach((det, idx) => {
+          const y = 200 + (idx * 45);
+          ctx.textAlign = 'right';
+          ctx.fillStyle = 'rgba(251, 191, 36, 0.9)';
+          ctx.font = '700 16px Cairo, sans-serif';
+          ctx.fillText(det.label, 560, y);
+
+          ctx.fillStyle = '#fff';
+          ctx.font = '600 18px Cairo, sans-serif';
+          ctx.fillText(det.value, 440, y);
+      });
+
+      // 5. QR Code (Mockup link to parent page)
+      const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(window.location.origin + '/parent.html?id=' + student.id)}`;
+      const qrImg = new Image();
+      qrImg.crossOrigin = "anonymous";
+      qrImg.src = qrUrl;
+      qrImg.onload = () => {
+          ctx.fillStyle = '#fff';
+          ctx.roundRect(40, 240, 140, 140, 15).fill();
+          ctx.drawImage(qrImg, 50, 250, 120, 120);
+          
+          ctx.fillStyle = 'rgba(255,255,255,0.5)';
+          ctx.font = '600 10px Cairo, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText('مسح للتحقق من الحالة', 110, 390);
+      };
+
+      // 6. Seal / Footer
+      ctx.fillStyle = 'rgba(251, 191, 36, 0.2)';
+      ctx.font = 'bold 80px Amiri, serif';
+      ctx.textAlign = 'left';
+      ctx.fillText('قرآني', 40, 100);
+  };
+
+  window.downloadIDImage = function() {
+      const canvas = document.getElementById('id-canvas');
+      const link = document.createElement('a');
+      link.download = `ID-${new Date().getTime()}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+  };
+
+  window.downloadIDPDF = function() {
+      const canvas = document.getElementById('id-canvas');
+      const imgData = canvas.toDataURL('image/jpeg', 1.0);
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF({
+          orientation: 'landscape',
+          unit: 'px',
+          format: [600, 400]
+      });
+      pdf.addImage(imgData, 'JPEG', 0, 0, 600, 400);
+      pdf.save(`ID-${new Date().getTime()}.pdf`);
   };
 
   /**
