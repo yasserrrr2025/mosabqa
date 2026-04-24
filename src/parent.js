@@ -50,6 +50,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       const student = students[0];
+      window.lastFetchedStudent = student;
       
       // Populate student info
       document.getElementById('r-name').textContent = student.full_name;
@@ -104,25 +105,34 @@ document.addEventListener('DOMContentLoaded', () => {
       const dateStr = ev.eval_date || new Date(ev.created_at).toLocaleDateString('ar-SA');
       const track = ev.track || 'حفظ أجزاء';
       const pages = ev.pages_count || 0;
+      const isAbsent = ev.attendance_status === 'غائب';
       
       const memoTxt = ev.memorized_part ? `<div style="font-size:0.95rem; color:var(--color-primary-dark); margin-top:10px; font-weight:bold; background:#f0f9ff; padding:8px 12px; border-radius:8px; border-right:4px solid #0ea5e9;">📖 المنجز: ${ev.memorized_part}</div>` : '';
       const noteTxt = (ev.notes && ev.notes.trim() !== '') ? `<div style="font-size:0.9rem; color:#6b7280; margin-top:8px; padding-right:10px; font-style:italic;">💬 ملاحظة المعلم: ${ev.notes}</div>` : '';
       
       let badgeStyle = "background:#f1f5f9; color:#475569;";
-      if(ev.performance.includes('ممتاز')) badgeStyle = "background:#fef3c7; color:#92400e; border: 1px solid #fde68a;";
-      else if(ev.performance.includes('جيد جداً')) badgeStyle = "background:#ecfdf5; color:#065f46; border: 1px solid #bbfcce;";
+      let perfText = ev.performance;
+
+      if (isAbsent) {
+          badgeStyle = "background:#fef2f2; color:#ef4444; border: 1px solid #fee2e2;";
+          perfText = "غائب (حسم 3 نقاط)";
+      } else if (ev.performance.includes('ممتاز')) {
+          badgeStyle = "background:#fef3c7; color:#92400e; border: 1px solid #fde68a;";
+      } else if (ev.performance.includes('جيد جداً')) {
+          badgeStyle = "background:#ecfdf5; color:#065f46; border: 1px solid #bbfcce;";
+      }
 
       const li = document.createElement('li');
       li.style.cssText = "padding: 20px; border: 1px solid #e2e8f0; border-radius: 14px; margin-bottom: 15px; background: #fff; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);";
       li.innerHTML = `
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom:1px dashed #e2e8f0; padding-bottom:10px;">
           <strong style="color:#1f2937; font-size:1.05rem;">🗓️ ${dateStr}</strong>
-          <span style="${badgeStyle} padding:4px 12px; border-radius:20px; font-size:0.8rem; font-weight:800;">${ev.performance}</span>
+          <span style="${badgeStyle} padding:4px 12px; border-radius:20px; font-size:0.8rem; font-weight:800;">${perfText}</span>
         </div>
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; font-size:0.9rem; color:#4b5563;">
           <div style="background:#f8fafc; padding:8px; border-radius:8px;">🎯 المسار: <strong>${track}</strong></div>
           <div style="background:#f8fafc; padding:8px; border-radius:8px;">📄 المنجز: <strong>${pages} صفحات</strong></div>
-          <div style="background:#f8fafc; padding:8px; border-radius:8px;">⏰ الحضور: <strong>${ev.attendance_status}</strong></div>
+          <div style="background:#f8fafc; padding:8px; border-radius:8px;">⏰ الحضور: <strong style="${isAbsent ? 'color:#ef4444' : ''}">${ev.attendance_status}</strong></div>
           <div style="background:#f8fafc; padding:8px; border-radius:8px;">✨ التجويد: <strong>${ev.tajweed || 'غير مقيم'}</strong></div>
         </div>
         ${memoTxt}
@@ -132,11 +142,14 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     const latest = evals[0];
-    if(latest.performance && latest.performance.includes('ممتاز') && latest.memorized_part && latest.memorized_part.trim().length > 0) {
+    if(latest.attendance_status !== 'غائب' && latest.performance && latest.performance.includes('ممتاز') && latest.memorized_part && latest.memorized_part.trim().length > 0) {
        if(memoContainer) memoContainer.style.display = 'block';
        const btnObj = document.getElementById('download-memo-cert-btn');
        if(btnObj) btnObj.setAttribute('data-part', latest.memorized_part);
     }
+
+    // Save current student for ID generation
+    window.currentStudentData = window.lastFetchedStudent;
   }
 
   function showError(msg) {
@@ -161,4 +174,94 @@ document.addEventListener('DOMContentLoaded', () => {
         window.open(`/certificate.html?type=memo&name=${encodeURIComponent(studentName)}&part=${encodeURIComponent(memoPart)}`, '_blank');
      });
   }
+
+  // ID Card Generation Logic for Parent (FIXED RENDERING)
+  const generateIdBtn = document.getElementById('generate-id-btn');
+  if (generateIdBtn) {
+      generateIdBtn.addEventListener('click', async () => {
+          const student = window.currentStudentData;
+          if (!student) return alert('يرجى الاستعلام عن الطالب أولاً.');
+
+          const modal = document.getElementById('id-card-modal');
+          const canvas = document.getElementById('id-canvas');
+          const ctx = canvas.getContext('2d');
+
+          modal.style.display = 'flex';
+          await document.fonts.ready;
+
+          const drawAll = (logo) => {
+              ctx.clearRect(0, 0, 600, 400);
+              const grad = ctx.createLinearGradient(0, 0, 600, 400);
+              grad.addColorStop(0, '#1e293b');
+              grad.addColorStop(1, '#334155');
+              ctx.fillStyle = grad;
+              
+              const roundRect = (x, y, w, h, r) => {
+                  ctx.beginPath(); ctx.moveTo(x + r, y);
+                  ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+                  ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r);
+                  ctx.closePath(); return ctx;
+              };
+              roundRect(0, 0, 600, 400, 25).fill();
+
+              if (logo) ctx.drawImage(logo, 40, 30, 80, 80);
+
+              ctx.strokeStyle = 'rgba(251, 191, 36, 0.1)';
+              ctx.lineWidth = 1;
+              for(let i=0; i<600; i+=30) { ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i-100, 400); ctx.stroke(); }
+              ctx.fillStyle = '#fbbf24'; ctx.fillRect(0, 0, 15, 400);
+
+              ctx.textAlign = 'right';
+              ctx.fillStyle = '#fbbf24'; ctx.font = 'bold 22px Cairo, sans-serif'; ctx.fillText('حلقة أجيال القرآن', 560, 50);
+              ctx.fillStyle = 'rgba(255,255,255,0.7)'; ctx.font = '600 14px Cairo, sans-serif'; ctx.fillText('بمدرسة عماد الدين زنكي المتوسطة', 560, 75);
+
+              ctx.fillStyle = '#fff'; ctx.font = 'bold 30px Cairo, sans-serif'; ctx.fillText(student.full_name, 560, 140);
+
+              const details = [
+                  { label: 'الصف الدراسي:', value: student.grade || '-' },
+                  { label: 'رقم الدفعة:', value: student.batch_number || '1' },
+                  { label: 'حالة التسجيل:', value: 'طالب معتمد ✅' }
+              ];
+              details.forEach((det, idx) => {
+                  const y = 210 + (idx * 45);
+                  ctx.textAlign = 'right'; ctx.fillStyle = 'rgba(251, 191, 36, 0.9)'; ctx.font = '700 16px Cairo, sans-serif'; ctx.fillText(det.label, 560, y);
+                  ctx.fillStyle = '#fff'; ctx.font = '600 18px Cairo, sans-serif'; ctx.fillText(det.value, 440, y);
+              });
+
+              const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(window.location.origin + '/parent.html?id=' + student.national_id)}`;
+              const qrImg = new Image();
+              qrImg.crossOrigin = "anonymous";
+              qrImg.src = qrUrl;
+              qrImg.onload = () => {
+                  ctx.fillStyle = '#fff'; roundRect(40, 240, 140, 140, 15).fill();
+                  ctx.drawImage(qrImg, 50, 250, 120, 120);
+                  ctx.fillStyle = 'rgba(255,255,255,0.5)'; ctx.font = '600 10px Cairo, sans-serif'; ctx.textAlign = 'center'; ctx.fillText('مسح للتحقق من الحالة', 110, 390);
+              };
+
+              ctx.fillStyle = 'rgba(251, 191, 36, 0.2)'; ctx.font = 'bold 80px Amiri, serif'; ctx.textAlign = 'left'; ctx.fillText('قرآني', 40, 100);
+          };
+
+          const logo = new Image();
+          logo.src = 'new-logo.png';
+          logo.onload = () => drawAll(logo);
+          logo.onerror = () => drawAll(null);
+      });
+  }
+
+  window.downloadIDImage = function() {
+      const canvas = document.getElementById('id-canvas');
+      const link = document.createElement('a');
+      link.download = `ID-${new Date().getTime()}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+  };
+
+  window.downloadIDPDF = function() {
+      const canvas = document.getElementById('id-canvas');
+      const imgData = canvas.toDataURL('image/jpeg', 1.0);
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF({ orientation: 'landscape', unit: 'px', format: [600, 400] });
+      pdf.addImage(imgData, 'JPEG', 0, 0, 600, 400);
+      pdf.save(`ID-${new Date().getTime()}.pdf`);
+  };
 });

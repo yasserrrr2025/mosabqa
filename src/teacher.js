@@ -14,7 +14,8 @@ function getSaudiDateStr() {
 }
 
 // Global score calculation logic
-function calculateDayScore(perf, pages) {
+function calculateDayScore(perf, pages, attendance) {
+    if (attendance === 'غائب') return -3;
     let p = 0;
     if (perf === 'ممتاز') p = 3;
     else if (perf === 'جيد جداً') p = 2;
@@ -90,7 +91,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const scores = {};
       (evals || []).forEach(ev => {
         if (!scores[ev.student_id]) scores[ev.student_id] = 0;
-        scores[ev.student_id] += calculateDayScore(ev.performance, ev.pages_count);
+        scores[ev.student_id] += calculateDayScore(ev.performance, ev.pages_count, ev.attendance_status);
       });
       
       window.currentScores = scores;
@@ -146,7 +147,7 @@ document.addEventListener('DOMContentLoaded', () => {
               <label for="att-p-${student.id}" class="pill-label">حاضر</label>
               <input type="radio" name="att-${student.id}" id="att-e-${student.id}" class="pill-radio att-excused" value="مستأذن" ${att==='مستأذن'?'checked':''}>
               <label for="att-e-${student.id}" class="pill-label">مستأذن</label>
-              <input type="radio" name="att-${student.id}" id="att-a-${student.id}" class="pill-radio att-absent" value="غائب" ${att==='غائب'?'checked':''}>
+              <input type="radio" name="att-${student.id}" id="att-a-${student.id}" class="pill-radio att-absent" value="غائب" ${att==='غائب'?'checked':''} onchange="window.handleAttendanceChange('${student.id}')">
               <label for="att-a-${student.id}" class="pill-label">غائب</label>
             </div>
           </div>
@@ -178,7 +179,7 @@ document.addEventListener('DOMContentLoaded', () => {
           <div class="eval-card-row">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
                 <label style="color:#64748b; font-weight:700;">عدد الصفحات المنجزة:</label>
-                <span style="background:#f1f5f9; padding:2px 10px; border-radius:10px; font-weight:bold; font-size:0.8rem; color:var(--color-accent);">نقاط الإنجاز: +${calculateDayScore(perf, pages)}</span>
+                <span style="background:#f1f5f9; padding:2px 10px; border-radius:10px; font-weight:bold; font-size:0.8rem; color:var(--color-accent);">نقاط الإنجاز: ${calculateDayScore(perf, pages, att) >= 0 ? '+' + calculateDayScore(perf, pages, att) : calculateDayScore(perf, pages, att)}</span>
             </div>
             <div class="page-pills">
               ${[0,1,2,3,4,5,6,7,8,9,10,12].map(n => `
@@ -319,7 +320,9 @@ document.addEventListener('DOMContentLoaded', () => {
     btn.disabled = true;
 
     const attendance = document.querySelector(`input[name="att-${studentId}"]:checked`)?.value || 'حاضر';
-    const performance = document.querySelector(`input[name="perf-${studentId}"]:checked`)?.value || 'ممتاز';
+    let performance = document.querySelector(`input[name="perf-${studentId}"]:checked`)?.value || 'ممتاز';
+    if (attendance === 'غائب') performance = 'غائب'; // Overwrite performance if absent
+    
     const track = document.querySelector(`input[name="track-${studentId}"]:checked`)?.value || 'حفظ أجزاء';
     const pages = document.querySelector(`input[name="pages-${studentId}"]:checked`)?.value || 0;
     const tajweedVal = document.querySelector(`input[name="tajweed-${studentId}"]:checked`)?.value || 'متقن للأحكام';
@@ -690,7 +693,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const scores = {};
         (evs || []).forEach(ev => {
             if (!scores[ev.student_id]) scores[ev.student_id] = 0;
-            scores[ev.student_id] += calculateDayScore(ev.performance, ev.pages_count);
+            scores[ev.student_id] += calculateDayScore(ev.performance, ev.pages_count, ev.attendance_status);
         });
         window.currentScores = scores;
       }
@@ -781,7 +784,7 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   /**
-   * Electronic Student ID Card Generator
+   * Electronic Student ID Card Generator (FIXED RENDERING)
    */
   window.generateStudentID = async function(studentId) {
       const student = window.currentStudents.find(s => s.id == studentId);
@@ -794,84 +797,89 @@ document.addEventListener('DOMContentLoaded', () => {
       modal.style.display = 'flex';
       await document.fonts.ready;
 
-      // 1. Clear and Background
-      ctx.clearRect(0, 0, 600, 400);
-      
-      // Gradient background
-      const grad = ctx.createLinearGradient(0, 0, 600, 400);
-      grad.addColorStop(0, '#1e293b');
-      grad.addColorStop(1, '#334155');
-      ctx.fillStyle = grad;
-      ctx.roundRect = ctx.roundRect || function (x, y, w, h, r) { if (w < 2 * r) r = w / 2; if (h < 2 * r) r = h / 2; ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); return ctx; };
-      
-      ctx.roundRect(0, 0, 600, 400, 25).fill();
-
-      // 2. Artistic Ornaments
-      ctx.strokeStyle = 'rgba(251, 191, 36, 0.1)';
-      ctx.lineWidth = 1;
-      for(let i=0; i<600; i+=30) {
-          ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i-100, 400); ctx.stroke();
-      }
-
-      // Gold accent bar
-      ctx.fillStyle = '#fbbf24';
-      ctx.fillRect(0, 0, 15, 400);
-
-      // 3. School Branding
-      ctx.textAlign = 'right';
-      ctx.fillStyle = '#fbbf24';
-      ctx.font = 'bold 22px Cairo, sans-serif';
-      ctx.fillText('حلقة أجيال القرآن', 560, 50);
-      
-      ctx.fillStyle = 'rgba(255,255,255,0.7)';
-      ctx.font = '600 14px Cairo, sans-serif';
-      ctx.fillText('بمدرسة عماد الدين زنكي المتوسطة', 560, 75);
-
-      // 4. Student Details
-      ctx.fillStyle = '#fff';
-      ctx.font = 'bold 30px Cairo, sans-serif';
-      ctx.fillText(student.full_name, 560, 140);
-
-      // Detail Rows
-      const details = [
-          { label: 'الصف الدراسي:', value: student.grade || '-' },
-          { label: 'رقم الدفعة:', value: document.getElementById('batch-number-badge')?.textContent || '1' },
-          { label: 'حالة التسجيل:', value: 'طالب معتمد ✅' }
-      ];
-
-      details.forEach((det, idx) => {
-          const y = 200 + (idx * 45);
-          ctx.textAlign = 'right';
-          ctx.fillStyle = 'rgba(251, 191, 36, 0.9)';
-          ctx.font = '700 16px Cairo, sans-serif';
-          ctx.fillText(det.label, 560, y);
-
-          ctx.fillStyle = '#fff';
-          ctx.font = '600 18px Cairo, sans-serif';
-          ctx.fillText(det.value, 440, y);
-      });
-
-      // 5. QR Code (Mockup link to parent page)
-      const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(window.location.origin + '/parent.html?id=' + student.id)}`;
-      const qrImg = new Image();
-      qrImg.crossOrigin = "anonymous";
-      qrImg.src = qrUrl;
-      qrImg.onload = () => {
-          ctx.fillStyle = '#fff';
-          ctx.roundRect(40, 240, 140, 140, 15).fill();
-          ctx.drawImage(qrImg, 50, 250, 120, 120);
+      // Function to draw everything
+      const drawAll = (logo) => {
+          ctx.clearRect(0, 0, 600, 400);
           
-          ctx.fillStyle = 'rgba(255,255,255,0.5)';
-          ctx.font = '600 10px Cairo, sans-serif';
-          ctx.textAlign = 'center';
-          ctx.fillText('مسح للتحقق من الحالة', 110, 390);
+          // Background
+          const grad = ctx.createLinearGradient(0, 0, 600, 400);
+          grad.addColorStop(0, '#1e293b');
+          grad.addColorStop(1, '#334155');
+          ctx.fillStyle = grad;
+          
+          const roundRect = (x, y, w, h, r) => {
+              ctx.beginPath(); ctx.moveTo(x + r, y);
+              ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+              ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r);
+              ctx.closePath(); return ctx;
+          };
+          roundRect(0, 0, 600, 400, 25).fill();
+
+          // Ornaments
+          ctx.strokeStyle = 'rgba(251, 191, 36, 0.1)';
+          ctx.lineWidth = 1;
+          for(let i=0; i<600; i+=30) { ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i-100, 400); ctx.stroke(); }
+          ctx.fillStyle = '#fbbf24'; ctx.fillRect(0, 0, 15, 400);
+
+          // Logo
+          if (logo) ctx.drawImage(logo, 40, 30, 80, 80);
+
+          // Branding
+          ctx.textAlign = 'right';
+          ctx.fillStyle = '#fbbf24'; ctx.font = 'bold 22px Cairo, sans-serif'; ctx.fillText('حلقة أجيال القرآن', 560, 50);
+          ctx.fillStyle = 'rgba(255,255,255,0.7)'; ctx.font = '600 14px Cairo, sans-serif'; ctx.fillText('بمدرسة عماد الدين زنكي المتوسطة', 560, 75);
+
+          // Student Name
+          ctx.fillStyle = '#fff'; ctx.font = 'bold 30px Cairo, sans-serif'; ctx.fillText(student.full_name, 560, 140);
+
+          // Details
+          const details = [
+              { label: 'الصف الدراسي:', value: student.grade || '-' },
+              { label: 'رقم الدفعة:', value: document.getElementById('batch-number-badge')?.textContent || '1' },
+              { label: 'حالة التسجيل:', value: 'طالب معتمد ✅' }
+          ];
+          details.forEach((det, idx) => {
+              const y = 210 + (idx * 45);
+              ctx.textAlign = 'right'; ctx.fillStyle = 'rgba(251, 191, 36, 0.9)'; ctx.font = '700 16px Cairo, sans-serif'; ctx.fillText(det.label, 560, y);
+              ctx.fillStyle = '#fff'; ctx.font = '600 18px Cairo, sans-serif'; ctx.fillText(det.value, 440, y);
+          });
+
+          // QR Code
+          const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(window.location.origin + '/parent.html?id=' + student.national_id)}`;
+          const qrImg = new Image();
+          qrImg.crossOrigin = "anonymous";
+          qrImg.src = qrUrl;
+          qrImg.onload = () => {
+              ctx.fillStyle = '#fff'; roundRect(40, 240, 140, 140, 15).fill();
+              ctx.drawImage(qrImg, 50, 250, 120, 120);
+              ctx.fillStyle = 'rgba(255,255,255,0.5)'; ctx.font = '600 10px Cairo, sans-serif'; ctx.textAlign = 'center'; ctx.fillText('مسح للتحقق من الحالة', 110, 390);
+          };
+
+          // Footer Text
+          ctx.fillStyle = 'rgba(251, 191, 36, 0.2)'; ctx.font = 'bold 80px Amiri, serif'; ctx.textAlign = 'left'; ctx.fillText('قرآني', 40, 100);
       };
 
-      // 6. Seal / Footer
-      ctx.fillStyle = 'rgba(251, 191, 36, 0.2)';
-      ctx.font = 'bold 80px Amiri, serif';
-      ctx.textAlign = 'left';
-      ctx.fillText('قرآني', 40, 100);
+      // Load logo first
+      const logo = new Image();
+      logo.src = 'new-logo.png';
+      logo.onload = () => drawAll(logo);
+      logo.onerror = () => drawAll(null);
+  };
+
+  /**
+   * Disable inputs if student is absent
+   */
+  window.handleAttendanceChange = function(studentId) {
+      const isAbsent = document.getElementById(`att-a-${studentId}`).checked;
+      const card = document.getElementById(`card-${studentId}`);
+      if (!card) return;
+      
+      const inputs = card.querySelectorAll('input[name^="perf-"], input[name^="pages-"], input[id^="memo-"], input[id^="note-"]');
+      inputs.forEach(input => {
+          input.disabled = isAbsent;
+          if (isAbsent) input.parentElement.style.opacity = '0.5';
+          else input.parentElement.style.opacity = '1';
+      });
   };
 
   window.downloadIDImage = function() {

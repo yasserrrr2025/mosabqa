@@ -80,9 +80,12 @@
           <button onclick="window.location.href = '/?tab=inquiry'" style="background: none; border: none; color: var(--color-primary); cursor: pointer; margin-bottom: 15px; font-weight: bold; font-size: 1rem;">← عودة للبحث المستمر</button>
           
           <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 2rem; gap: 1rem; flex-wrap: wrap;">
-            <div class="student-info-header" style="flex: 1; margin-bottom: 0;">
-              <h3 style="color: var(--color-primary-dark); margin-bottom: 5px;">الطالب: <span id="r-name" style="color: var(--color-gold-dark);"></span></h3>
-              <p style="font-size: 0.95rem;">الصف: <span id="r-grade" style="font-weight:bold;"></span> - الفصل: <span id="r-class" style="font-weight:bold;"></span></p>
+            <div class="student-info-header" style="flex: 1; margin-bottom: 0; display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <h3 style="color: var(--color-primary-dark); margin-bottom: 5px;">الطالب: <span id="r-name" style="color: var(--color-gold-dark);"></span></h3>
+                <p style="font-size: 0.95rem;">الصف: <span id="r-grade" style="font-weight:bold;"></span> - الفصل: <span id="r-class" style="font-weight:bold;"></span></p>
+              </div>
+              <button id="generate-id-btn" class="submit-btn" style="width:auto; margin:0; padding:8px 15px; font-size:0.85rem; background: var(--color-primary-dark);">🪪 بطاقة الطالب</button>
             </div>
           </div>
           
@@ -110,6 +113,21 @@
       <div class="decorative-pattern top-left"></div>
       <div class="decorative-pattern bottom-right"></div>
     </div>
+
+    <!-- Student ID Card Modal -->
+    <div id="id-card-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:9999; align-items:center; justify-content:center; flex-direction:column; padding:20px;">
+      <div style="background:white; padding:20px; border-radius:25px; max-width:500px; width:100%; text-align:center; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);">
+         <h3 style="margin-bottom:15px; color: #1e293b;">🪪 بطاقة الطالب الرقمية</h3>
+         <canvas id="id-canvas" width="600" height="400" style="width:100%; max-width:400px; border-radius:15px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); margin-bottom:20px;"></canvas>
+         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+            <button onclick="window.downloadIDImage()" class="submit-btn" style="background: #3b82f6; color:white; margin:0; padding:12px;">🖼️ حفظ كصورة</button>
+            <button onclick="window.downloadIDPDF()" class="submit-btn" style="background: #fbbf24; color: #b45309; margin:0; padding:12px;">📄 حفظ PDF</button>
+            <button onclick="document.getElementById('id-card-modal').style.display='none'" class="submit-btn" style="background:#ef4444; color:white; grid-column: span 2; margin:0; padding:12px;">❌ إغلاق</button>
+         </div>
+      </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
     <script type="module" src="/src/parent.js"></script>
   </body>
